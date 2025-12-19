@@ -3,46 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Logistics Analysis Pro v16.0</title>
+    <title>Logistics Intelligence Dashboard v18.0</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <style>
         :root {
-            --primary: #2196F3; --secondary: #673AB7; --success: #4CAF50; --warning: #FF9800; --bg: #f0f4f8;
+            --primary: #2196F3; --secondary: #673AB7; --success: #4CAF50; --bg: #f0f4f8;
             --white: #ffffff; --text: #0f172a; --border: #cbd5e1;
         }
-        body { font-family: 'Microsoft JhengHei', sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--text); }
+        body { font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--text); }
         .container { max-width: 1400px; margin: 0 auto; width: 100%; }
         
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .lang-select { padding: 5px 10px; border-radius: 5px; border: 1px solid var(--border); font-weight: bold; }
+
         .filter-card { 
-            background: var(--white); padding: 20px; border-radius: 15px; 
+            background: var(--white); padding: 25px; border-radius: 15px; 
             box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;
-            margin-bottom: 20px; border: 1px solid var(--border);
+            margin-bottom: 25px; border: 1px solid var(--border);
         }
-        .filter-group { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 200px; }
+        .filter-group { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 220px; }
         .filter-group label { font-weight: 900; font-size: 0.9rem; color: #475569; }
         input { padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 1rem; font-weight: bold; width: 100%; box-sizing: border-box; }
         
-        .btn-run { background: #0f172a; color: white; border: none; padding: 0 30px; border-radius: 10px; cursor: pointer; font-weight: 900; font-size: 1.1rem; height: 48px; width: 100%; }
+        .btn-run { background: #0f172a; color: white; border: none; padding: 0 30px; border-radius: 10px; cursor: pointer; font-weight: 900; font-size: 1.1rem; height: 50px; width: 100%; transition: 0.3s; }
+        .btn-run:hover { background: var(--primary); }
 
         .stats-grid { display: flex; flex-direction: column; gap: 30px; width: 100%; }
-        .chart-card { background: var(--white); padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box; }
-        .chart-header { margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; }
+        .chart-card { background: var(--white); padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box; overflow: hidden; }
+        .chart-header { margin-bottom: 15px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; }
         .chart-title { font-weight: 900; font-size: 1.6rem; color: #1e293b; }
         
-        /* 分析說明區塊樣式 */
         .analysis-box { 
-            margin-top: 20px; padding: 15px; background: #f8fafc; border-left: 5px solid var(--primary); 
-            border-radius: 8px; font-size: 1.1rem; line-height: 1.6; color: #334155;
+            margin-top: 20px; padding: 18px; background: #f8fafc; border-left: 6px solid var(--primary); 
+            border-radius: 8px; font-size: 1.1rem; line-height: 1.8; color: #334155;
         }
-        .analysis-box b { color: #0f172a; }
 
-        .chart-container { height: 450px; width: 100%; position: relative; }
-
-        @media screen and (orientation: landscape) and (max-height: 600px) {
-            .chart-container { height: 85vh; }
-            .analysis-box { font-size: 0.9rem; padding: 10px; }
-        }
+        .chart-container { height: 480px; width: 100%; position: relative; padding-right: 35px; box-sizing: border-box; }
 
         #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; }
         .loader { border: 6px solid #f3f3f3; border-top: 6px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
@@ -50,55 +47,60 @@
 </head>
 <body>
 
-    <div id="loading"><div class="loader"></div><h2 style="margin-top:20px; font-weight:900;">數據分析中...</h2></div>
+    <div id="loading"><div class="loader"></div><h2 id="load-msg">大數據計算中...</h2></div>
 
     <div class="container">
-        <div class="dashboard-header" style="text-align: center; margin-bottom: 20px;">
-            <h1 style="font-weight: 900; font-size: 2.2rem; margin:0;">貨櫃物流數據深度分析報表</h1>
+        <div class="top-bar">
+            <h1 id="main-title" style="font-weight: 900; font-size: 1.8rem; margin:0;">物流運籌與重量分析報表</h1>
+            <select id="ui-lang" class="lang-select" onchange="changeLanguage()">
+                <option value="zh">繁體中文</option>
+                <option value="en">English</option>
+                <option value="hi">हिन्दी (Hindi)</option>
+            </select>
         </div>
 
         <div class="filter-card">
             <div class="filter-group">
-                <label>📅 開始日期</label>
+                <label id="lbl-start">📅 開始日期</label>
                 <input type="date" id="date-start">
             </div>
             <div class="filter-group">
-                <label>📅 結束日期</label>
+                <label id="lbl-end">📅 結束日期</label>
                 <input type="date" id="date-end">
             </div>
             <div class="filter-group">
-                <label>🔍 材料名稱</label>
-                <input list="mat-list" id="mat-filter" placeholder="篩選特定材料...">
+                <label id="lbl-mat">🔍 材料名稱 (B 欄)</label>
+                <input type="text" id="mat-filter" list="mat-list" placeholder="搜尋或選擇材料...">
                 <datalist id="mat-list"></datalist>
             </div>
             <div class="filter-group" style="min-width: 120px;">
-                <button class="btn-run" onclick="generateReport()">更新數據</button>
+                <button id="btn-update" class="btn-run" onclick="generateReport()">執行數據分析</button>
             </div>
         </div>
 
         <div class="stats-grid">
             <div class="chart-card">
-                <div class="chart-header"><div class="chart-title">📦 每日入廠次數</div></div>
+                <div class="chart-header"><div class="chart-title" id="tit-counts">📦 每日入廠次數</div></div>
                 <div class="chart-container"><canvas id="countsChart"></canvas></div>
-                <div id="analysis-counts" class="analysis-box">正在分析次數數據...</div>
+                <div id="analysis-counts" class="analysis-box"></div>
             </div>
 
             <div class="chart-card">
-                <div class="chart-header"><div class="chart-title">⚖️ 每日入廠總重量趨勢 (噸)</div></div>
+                <div class="chart-header"><div class="chart-title" id="tit-tons">⚖️ 每日入廠總重量趨勢 (噸)</div></div>
                 <div class="chart-container"><canvas id="tonsChart"></canvas></div>
-                <div id="analysis-tons" class="analysis-box">正在分析重量趨勢...</div>
+                <div id="analysis-tons" class="analysis-box"></div>
             </div>
 
             <div class="chart-card">
-                <div class="chart-header"><div class="chart-title">⏱️ 每日卸載貨櫃作業工時加總 (Hr)</div></div>
+                <div class="chart-header"><div class="chart-title" id="tit-hours">⏱️ 每日卸載貨櫃作業工時加總 (Hr)</div></div>
                 <div class="chart-container"><canvas id="hoursChart"></canvas></div>
-                <div id="analysis-hours" class="analysis-box">正在分析工時效率...</div>
+                <div id="analysis-hours" class="analysis-box"></div>
             </div>
 
             <div class="chart-card">
-                <div class="chart-header"><div class="chart-title">🔥 貨櫃入廠 24H 平均流量分佈</div></div>
+                <div class="chart-header"><div class="chart-title" id="tit-hourly">🔥 24H 入廠貨物重量分佈 (噸)</div></div>
                 <div class="chart-container"><canvas id="hourlyChart"></canvas></div>
-                <div id="analysis-hourly" class="analysis-box">正在分析尖峰時段...</div>
+                <div id="analysis-hourly" class="analysis-box"></div>
             </div>
         </div>
     </div>
@@ -109,32 +111,47 @@
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxX-XRuXqIB7JJopFGYaHtiAk6kZfe19bFihOd7HCxrA-ffKQGXDoIfJwwPYFLZER8c/exec";
     let rawData = [];
     let charts = {};
+    
+    const i18n = {
+        zh: { title: "物流運籌與重量分析報表", start: "開始日期", end: "結束日期", mat: "材料名稱", update: "分析", cT: "每日入廠次數", wT: "每日入廠總重量趨勢 (噸)", hT: "每日卸載作業工時 (Hr)", aT: "24H 入廠貨物重量分佈 (噸)", loading: "分析中..." },
+        en: { title: "Logistics & Weight Intelligence", start: "Start", end: "End", mat: "Material", update: "Run", cT: "Daily Arrivals", wT: "Daily Tonnage Trend (Tons)", hT: "Daily Unloading Workload (Hr)", aT: "24H Goods Weight Distribution (Tons)", loading: "Processing..." },
+        hi: { title: "रसद और वजन विश्लेषण", start: "शुरुआत", end: "अंतिम", mat: "सामग्री", update: "अपडेट", cT: "दैनिक आगमन", wT: "दैनिक वजन (टन)", hT: "दैनिक कार्य समय (Hr)", aT: "24H माल का वजन वितरण (टन)", loading: "विश्लेषण..." }
+    };
 
     window.onload = async () => {
         toggleLoading(true);
-        // 修正：預設日期為「當月」(從本月 1 日到今日)
         const now = new Date();
         const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
         document.getElementById('date-start').value = firstDay.toISOString().split('T')[0];
-        document.getElementById('date-end').value = now.toISOString().split('T')[0];
+        document.getElementById('date-end').value = lastDay.toISOString().split('T')[0];
 
         try {
             const resp = await fetch(`${GAS_URL}?action=loadRecords`);
             const res = await resp.json();
             if (res.result === 'success') {
                 rawData = res.data;
-                initMatDatalist();
+                const mats = new Set();
+                rawData.forEach(r => { if (r.formNo) mats.add(r.formNo); });
+                document.getElementById('mat-list').innerHTML = Array.from(mats).sort().map(m => `<option value="${m}">`).join('');
                 generateReport();
             }
-        } catch (e) { alert("無法載入雲端資料"); }
+        } catch (e) { alert("Data fetch failed"); }
         toggleLoading(false);
     };
 
-    function initMatDatalist() {
-        const mats = new Set();
-        rawData.forEach(r => { if (r.formNo) mats.add(r.formNo); });
-        const mList = document.getElementById('mat-list');
-        mList.innerHTML = Array.from(mats).sort().map(m => `<option value="${m}">`).join('');
+    function changeLanguage() {
+        const l = document.getElementById('ui-lang').value;
+        document.getElementById('main-title').innerText = i18n[l].title;
+        document.getElementById('lbl-start').innerText = "📅 " + i18n[l].start;
+        document.getElementById('lbl-end').innerText = "📅 " + i18n[l].end;
+        document.getElementById('lbl-mat').innerText = "🔍 " + i18n[l].mat;
+        document.getElementById('btn-update').innerText = i18n[l].update;
+        document.getElementById('tit-counts').innerText = i18n[l].cT;
+        document.getElementById('tit-tons').innerText = i18n[l].wT;
+        document.getElementById('tit-hours').innerText = i18n[l].hT;
+        document.getElementById('tit-hourly').innerText = i18n[l].aT;
+        generateReport();
     }
 
     
@@ -145,7 +162,7 @@
         const filter = document.getElementById('mat-filter').value;
 
         let dailyData = {};
-        let hourlySum = Array(24).fill(0);
+        let hourlyWeight = Array(24).fill(0); // 修正：統計小時重量
         let daysCount = 0;
 
         for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
@@ -156,97 +173,76 @@
 
         rawData.forEach(r => {
             if (!r.startTime) return;
-            const dObj = parseDate(r.startTime);
-            if (!dObj) return;
-
+            const m = r.startTime.match(/(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})/);
+            if (!m) return;
+            const dObj = new Date(m[3], m[2]-1, m[1], m[4], m[5]);
             const dKey = dObj.toISOString().split('T')[0];
-            const isMatch = !filter || (r.formNo === filter);
-
-            if (dailyData[dKey] && isMatch) {
+            if (dailyData[dKey] && (!filter || r.formNo === filter)) {
+                const currentTons = (parseFloat(r.concernSection) || 0) / 1000;
                 dailyData[dKey].counts += 1;
-                hourlySum[dObj.getHours()] += 1;
-                dailyData[dKey].tons += (parseFloat(r.concernSection) || 0) / 1000;
-                // 工時修正：明確除以 60
-                const rawTime = r.totalTime || r['Total Time'] || 0;
-                dailyData[dailyData[dKey] ? dKey : ''].hours += (parseFloat(rawTime) || 0) / 60;
+                dailyData[dKey].tons += currentTons;
+                dailyData[dKey].hours += (parseFloat(r.totalTime || r['Total Time'] || 0)) / 60;
+                
+                // 修正：24H 分佈改為累加重量 (噸)
+                hourlyWeight[dObj.getHours()] += currentTons;
             }
         });
 
         const labels = Object.keys(dailyData).sort();
-        renderCharts(labels, dailyData, hourlySum, daysCount);
-        updateAnalysis(labels, dailyData, hourlySum, daysCount);
+        const avgHourlyWeight = hourlyWeight.map(v => (v / (daysCount || 1)).toFixed(2));
+        
+        renderCharts(labels, dailyData, avgHourlyWeight, daysCount);
+        doDeepAnalysis(labels, dailyData, hourlyWeight, daysCount);
     }
 
-    function parseDate(s) {
-        const m = s.match(/(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})/);
-        return m ? new Date(m[3], m[2]-1, m[1], m[4], m[5]) : null;
+    function doDeepAnalysis(labels, dayMap, hWeight, dCount) {
+        const l = document.getElementById('ui-lang').value;
+        const totalCounts = labels.reduce((acc, k) => acc + dayMap[k].counts, 0);
+        const totalTons = labels.reduce((acc, k) => acc + dayMap[k].tons, 0);
+        const totalHours = labels.reduce((acc, k) => acc + dayMap[k].hours, 0);
+        const peakWeightH = hWeight.indexOf(Math.max(...hWeight));
+
+        const reports = {
+            zh: [
+                `🚛 <b>數據洞察：</b>本期累計入廠 <b>${totalCounts}</b> 車次。資源分配顯示平均每日作業約 <b>${(totalCounts/dCount).toFixed(1)}</b> 台。`,
+                `⚖️ <b>重量分析：</b>總入庫重量 <b>${totalTons.toFixed(1)}</b> 噸。日均重量為 <b>${(totalTons/dCount).toFixed(2)}</b> 噸，物流吞吐量穩定。`,
+                `⏱️ <b>效率監測：</b>總卸貨耗時 <b>${totalHours.toFixed(1)}</b> 小時。每處理一噸貨物平均需花費 <b>${totalTons>0?((totalHours*60)/totalTons).toFixed(1):0}</b> 分鐘。`,
+                `🔥 <b>負荷分析：</b>全天重量負荷最高峰在 <b>${peakWeightH}:00-${peakWeightH+1}:00</b>。此時段單次進場貨物最重，需注意吊掛與搬運安全。`
+            ],
+            en: [
+                `🚛 <b>Insights:</b> Total <b>${totalCounts}</b> arrivals. Daily average is <b>${(totalCounts/dCount).toFixed(1)}</b> containers.`,
+                `⚖️ <b>Weight:</b> Total processed <b>${totalTons.toFixed(1)}</b> tons. Daily average throughput is <b>${(totalTons/dCount).toFixed(2)}</b> tons.`,
+                `⏱️ <b>Efficiency:</b> Total <b>${totalHours.toFixed(1)}</b> Hr. Average <b>${totalTons>0?((totalHours*60)/totalTons).toFixed(1):0}</b> mins per ton handled.`,
+                `🔥 <b>Peak Load:</b> Maximum cargo weight influx occurs at <b>${peakWeightH}:00-${peakWeightH+1}:00</b>. Highest safety attention required.`
+            ],
+            hi: [
+                `🚛 <b>ट्रैफ़िक:</b> कुल <b>${totalCounts}</b> आगमन। दैनिक औसत <b>${(totalCounts/dCount).toFixed(1)}</b> कंटेनर।`,
+                `⚖️ <b>वजन:</b> कुल <b>${totalTons.toFixed(1)}</b> टन। दैनिक औसत थ्रूपुट <b>${(totalTons/dCount).toFixed(2)}</b> टन है।`,
+                `⏱️ <b>कुशलता:</b> कुल <b>${totalHours.toFixed(1)}</b> घंटे। प्रति टन औसत समय <b>${totalTons>0?((totalHours*60)/totalTons).toFixed(1):0}</b> मिनट।`,
+                `🔥 <b>पीक लोड:</b> अधिकतम माल का वजन <b>${peakWeightH}:00-${peakWeightH+1}:00</b> के बीच आता है।`
+            ]
+        };
+
+        document.getElementById('analysis-counts').innerHTML = reports[l][0];
+        document.getElementById('analysis-tons').innerHTML = reports[l][1];
+        document.getElementById('analysis-hours').innerHTML = reports[l][2];
+        document.getElementById('analysis-hourly').innerHTML = reports[l][3];
     }
 
-    function renderCharts(labels, dayMap, hSum, dCount) {
-        const cData = labels.map(l => dayMap[l].counts);
-        const tData = labels.map(l => dayMap[l].tons.toFixed(1));
-        const hData = labels.map(l => dayMap[l].hours.toFixed(1));
-        const avgH = hSum.map(v => (v / (dCount || 1)).toFixed(2));
-
-        createChart('countsChart', '入廠次數', labels, cData, '#4CAF50', 'bar', 0);
-        createChart('tonsChart', '重量(噸)', labels, tData, '#2196F3', 'line', 1, true);
-        createChart('hoursChart', '作業工時(Hr)', labels, hData, '#FF9800', 'bar', 1);
-        createChart('hourlyChart', '平均流量', Array.from({length:24},(_,i)=>i+'h'), avgH, '#9C27B0', 'line', 2, true);
+    function renderCharts(labels, dayMap, hAvgWeight, dCount) {
+        const ctxO = { responsive: true, maintainAspectRatio: false, layout: { padding: { right: 40, top: 40 } }, plugins: { legend: { display: false }, datalabels: { display: true, anchor: 'end', align: 'top', font: { weight: 'bold', size: 14 } } }, scales: { y: { beginAtZero: true, grid: { color: '#e2e8f0' } }, x: { grid: { display: false } } } };
+        
+        createChart('countsChart', labels, labels.map(l=>dayMap[l].counts), '#4CAF50', 'bar', 0, ctxO);
+        createChart('tonsChart', labels, labels.map(l=>dayMap[l].tons.toFixed(1)), '#2196F3', 'line', 1, ctxO);
+        createChart('hoursChart', labels, labels.map(l=>dayMap[l].hours.toFixed(1)), '#FF9800', 'bar', 1, ctxO);
+        // 時段圖：改為顯示重量 (噸)
+        createChart('hourlyChart', Array.from({length:24},(_,i)=>i+'h'), hAvgWeight, '#9C27B0', 'line', 2, ctxO);
     }
 
-    function updateAnalysis(labels, dayMap, hSum, dCount) {
-        // 次數分析
-        const totalCounts = labels.reduce((acc, l) => acc + dayMap[l].counts, 0);
-        const maxDay = labels.reduce((a, b) => dayMap[a].counts > dayMap[b].counts ? a : b);
-        document.getElementById('analysis-counts').innerHTML = `💡 <b>統計分析：</b>本區段總計入廠 <b>${totalCounts}</b> 次。單日最高紀錄出現在 <b>${maxDay}</b>，共入廠 <b>${dayMap[maxDay].counts}</b> 次。`;
-
-        // 重量分析
-        const totalTons = labels.reduce((acc, l) => acc + dayMap[l].tons, 0).toFixed(1);
-        document.getElementById('analysis-tons').innerHTML = `💡 <b>統計分析：</b>累積卸載重量達 <b>${totalTons}</b> 噸。日平均進貨量約為 <b>${(totalTons / dCount).toFixed(1)}</b> 噸。`;
-
-        // 工時分析
-        const totalHrs = labels.reduce((acc, l) => acc + dayMap[l].hours, 0).toFixed(1);
-        document.getElementById('analysis-hours').innerHTML = `💡 <b>統計分析：</b>總作業人力耗時 <b>${totalHrs}</b> 小時。平均每車次卸載耗時約 <b>${totalCounts > 0 ? ((totalHrs*60) / totalCounts).toFixed(0) : 0}</b> 分鐘。`;
-
-        // 時段分析
-        const peakHour = hSum.indexOf(Math.max(...hSum));
-        document.getElementById('analysis-hourly').innerHTML = `💡 <b>尖峰分析：</b>貨櫃進場高峰集中在 <b>${peakHour}:00 - ${peakHour + 1}:00</b>。建議此時段預留更多待命人力。`;
-    }
-
-    function createChart(id, label, labels, data, color, type, decimals, isArea = false) {
+    function createChart(id, labels, data, color, type, decimals, options) {
         const ctx = document.getElementById(id).getContext('2d');
         if (charts[id]) charts[id].destroy();
-        charts[id] = new Chart(ctx, {
-            type: type,
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: label,
-                    data: data,
-                    backgroundColor: isArea ? color + '33' : color,
-                    borderColor: color,
-                    borderWidth: 3,
-                    tension: 0.4,
-                    fill: isArea
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    datalabels: {
-                        display: true, anchor: 'end', align: 'top', color: '#1e293b',
-                        font: { weight: '900', size: 16 },
-                        formatter: (val) => val == 0 ? '' : (decimals === 0 ? Math.round(val) : parseFloat(val).toFixed(decimals))
-                    }
-                },
-                scales: {
-                    y: { beginAtZero: true, grid: { color: '#e2e8f0' }, ticks: { font: { size: 14, weight: 'bold' } } },
-                    x: { ticks: { font: { size: 12, weight: 'bold' } } }
-                }
-            }
-        });
+        charts[id] = new Chart(ctx, { type: type, data: { labels: labels, datasets: [{ data: data, backgroundColor: type==='line'?color+'33':color, borderColor: color, borderWidth: 3, tension: 0.4, fill: type==='line' }] }, options: { ...options, plugins: { ...options.plugins, datalabels: { ...options.plugins.datalabels, formatter: (v) => v==0?'':(decimals===0?Math.round(v):parseFloat(v).toFixed(decimals)) } } } });
     }
 
     function toggleLoading(show) { document.getElementById('loading').style.display = show ? 'flex' : 'none'; }
