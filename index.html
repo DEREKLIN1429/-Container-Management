@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Logistics Analysis Pro v29.0</title>
+    <title>Logistics Intelligence Dashboard v30.0</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
@@ -23,6 +23,8 @@
             box-shadow: -5px 0 20px rgba(0,0,0,0.1); z-index: 2000; transition: 0.4s; padding: 30px; overflow-y: auto;
         }
         #settings-panel.active { right: 0; }
+        .set-item { margin-bottom: 15px; display: flex; flex-direction: column; gap: 5px; }
+        .set-item label { font-weight: bold; font-size: 0.85rem; color: #64748b; }
 
         .filter-card { 
             background: var(--white); padding: 30px; border-radius: 20px; 
@@ -44,12 +46,11 @@
         .chart-controls { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
         .chart-select { padding: 6px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.85rem; font-weight: bold; background: #fff; }
 
-        /* 數據分析 2欄3行 佈局 */
         .analysis-box { margin-top: 20px; padding: 20px; background: #f8fafc; border-left: 8px solid var(--primary); border-radius: 12px; }
         .stat-grid-mini { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .stat-line { display: flex; flex-direction: column; border-bottom: 1px dashed #eee; padding-bottom: 5px; }
-        .stat-label { font-weight: bold; color: #64748b; font-size: 0.8rem; }
-        .stat-num { font-weight: 900; color: var(--primary); font-size: 1rem; }
+        .stat-label { font-weight: bold; color: #64748b; font-size: 0.85rem; }
+        .stat-num { font-weight: 900; color: var(--primary); font-size: 1.1rem; }
 
         .chart-container { height: 500px; width: 100%; position: relative; padding-right: 50px; }
         #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(15, 23, 42, 0.9); color: white; padding: 12px 30px; border-radius: 30px; font-weight: bold; z-index: 3000; display: none; }
@@ -59,32 +60,36 @@
 
     <div id="loading" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); display:none; flex-direction:column; align-items:center; justify-content:center; z-index:5000;">
         <div style="border:8px solid #f3f3f3; border-top:8px solid var(--primary); border-radius:50%; width:60px; height:60px; animation:spin 1s linear infinite;"></div>
-        <h2 style="margin-top:20px; font-weight:900;">資料分析中...</h2>
+        <h2 id="load-msg" style="margin-top:20px; font-weight:900;">數據分析中...</h2>
     </div>
     <div id="toast">✅ Image Copied!</div>
 
     <div id="settings-panel">
-        <div class="settings-header"><h3>⚙️ 高級設定</h3><button onclick="toggleSettings()" style="border:none; background:none; font-size:1.5rem; cursor:pointer;">&times;</button></div>
+        <div class="settings-header"><h3>⚙️ Dashboard Settings</h3><button onclick="toggleSettings()" style="border:none; background:none; font-size:1.5rem; cursor:pointer;">&times;</button></div>
         <div class="set-item"><label>🔢 小數顯示位數</label><input type="number" id="set-decimals" value="1"></div>
         <div class="set-item"><label>🖼️ 複製圖片邊框顏色</label><input type="color" id="set-border-color" value="#000000"></div>
         <div class="set-item"><label>⏱️ 訊息自動關閉(秒)</label><input type="number" id="set-toast-time" value="1"></div>
-        <button class="btn-run" style="height:45px; font-size:1rem; margin-top:20px;" onclick="saveAndApply()">儲存</button>
+        <button class="btn-run" style="height:45px; font-size:1rem; margin-top:20px;" onclick="saveAndApply()">Save Settings</button>
     </div>
 
     <div class="container">
         <div class="top-bar">
-            <h1 id="main-title" style="font-weight: 900; font-size: 1.8rem; margin:0;">物流分析報表 v29.0</h1>
+            <h1 id="main-title" style="font-weight: 900; font-size: 1.8rem; margin:0;">物流分析報表 v30.0</h1>
             <div class="control-group">
-                <select id="ui-lang" class="lang-select" onchange="changeLanguage()"><option value="zh">繁體中文</option><option value="en">English</option></select>
+                <select id="ui-lang" class="lang-select" onchange="changeLanguage()">
+                    <option value="zh">繁體中文</option>
+                    <option value="en">English</option>
+                    <option value="hi">हिन्दी (Hindi)</option>
+                </select>
                 <button class="btn-icon" onclick="toggleSettings()">⚙️</button>
             </div>
         </div>
 
         <div class="filter-card">
-            <div class="filter-group"><label>📅 Start Date</label><input type="date" id="date-start"></div>
-            <div class="filter-group"><label>📅 End Date</label><input type="date" id="date-end"></div>
-            <div class="filter-group"><label>🔍 Material Search</label><input type="text" id="mat-filter" list="mat-list" placeholder="搜尋材料..."><datalist id="mat-list"></datalist></div>
-            <button class="btn-run" onclick="generateReport()">Update</button>
+            <div class="filter-group"><label id="lbl-start">📅 Start Date</label><input type="date" id="date-start"></div>
+            <div class="filter-group"><label id="lbl-end">📅 End Date</label><input type="date" id="date-end"></div>
+            <div class="filter-group"><label id="lbl-mat">🔍 Material Search</label><input type="text" id="mat-filter" list="mat-list" placeholder="Material Name..."><datalist id="mat-list"></datalist></div>
+            <button id="btn-update" class="btn-run" onclick="generateReport()">Update</button>
         </div>
 
         <div class="stats-grid">
@@ -143,9 +148,15 @@
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxX-XRuXqIB7JJopFGYaHtiAk6kZfe19bFihOd7HCxrA-ffKQGXDoIfJwwPYFLZER8c/exec";
     let rawData = [], charts = {};
 
+    // --- 修正：補全 i18n 字典 ---
+    const i18n = {
+        zh: { title: "物流分析報表 v30.0", start: "開始日期", end: "結束日期", mat: "材料搜尋", update: "更新數據", cT: "📦 貨櫃入廠次數", wT: "⚖️ 入廠總重量分析", hT: "⏱️ 作業工時分析", aT: "🔥 24H 流量分佈", l1: "總入廠:", l2: "總重量:", l3: "總工時:", l4: "平均工時:", l5: "平均重量:", l6: "產能比:" },
+        en: { title: "Logistics Dashboard v30.0", start: "Start Date", end: "End Date", mat: "Material Search", update: "Update", cT: "📦 Arrivals Count", wT: "⚖️ Total Tonnage", hT: "⏱️ Workload Hours", aT: "🔥 24H Distribution", l1: "Total Units:", l2: "Total Tons:", l3: "Total Hrs:", l4: "Avg Hr/Unit:", l5: "Avg Ton/Unit:", l6: "Labor Ratio:" },
+        hi: { title: "लॉजिस्टिक्स डैशबोर्ड v30.0", start: "शुरुआत तिथि", end: "अंतिम तिथि", mat: "सामग्री खोज", update: "अपडेट", cT: "📦 कुल आगमन", wT: "⚖️ कुल वजन", hT: "⏱️ काम के घंटे", aT: "🔥 24H वितरण", l1: "कुल इकाइयाँ:", l2: "कुल टन:", l3: "कुल घंटे:", l4: "औसत घंटे:", l5: "औसत वजन:", l6: "कार्य अनुपात:" }
+    };
+
     window.onload = async () => {
-        loadSettings();
-        initUI();
+        loadSettings(); initSelectors();
         const now = new Date(), firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0], lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
         document.getElementById('date-start').value = localStorage.getItem('last_start_date') || firstDay;
         document.getElementById('date-end').value = localStorage.getItem('last_end_date') || lastDay;
@@ -154,31 +165,43 @@
             const r = await fetch(`${GAS_URL}?action=loadRecords`);
             const res = await r.json();
             if (res.result === 'success') { rawData = res.data; initMatDatalist(); generateReport(); }
-        } catch (e) { alert("Data Fetch Error"); }
+        } catch (e) { alert("Data fetch failed"); }
         toggleLoading(false);
     };
 
     
 
-    function initUI() {
+    // --- 修正：語言切換函數 ---
+    function changeLanguage() {
+        const l = document.getElementById('ui-lang').value;
+        document.getElementById('main-title').innerText = i18n[l].title;
+        document.getElementById('lbl-start').innerText = "📅 " + i18n[l].start;
+        document.getElementById('lbl-end').innerText = "📅 " + i18n[l].end;
+        document.getElementById('lbl-mat').innerText = "🔍 " + i18n[l].mat;
+        document.getElementById('btn-update').innerText = i18n[l].update;
+        document.getElementById('tit-1').innerText = i18n[l].cT;
+        document.getElementById('tit-2').innerText = i18n[l].wT;
+        document.getElementById('tit-3').innerText = i18n[l].hT;
+        document.getElementById('tit-4').innerText = i18n[l].aT;
+        generateReport();
+    }
+
+    function initSelectors() {
         const types = [ {v:'bar', n:'長條圖'}, {v:'line', n:'趨勢圖'}, {v:'area', n:'面積圖'}, {v:'scatter', n:'散佈圖'}, {v:'radar', n:'雷達圖'}, {v:'stepped-line', n:'階梯圖'} ];
         const sources = [ {v:'counts', n:'資料項: 次數'}, {v:'tons', n:'資料項: 重量(噸)'}, {v:'hours', n:'資料項: 工時(Hr)'} ];
-        
         for(let i=1; i<=4; i++) {
-            const sType = document.getElementById(`type-${i}`);
-            sType.innerHTML = types.map(o => `<option value="${o.v}">${o.n}</option>`).join('');
-            if(i===2) sType.value = 'area'; if(i===4) sType.value = 'radar';
-            
-            const sSource = document.getElementById(`source-${i}`);
-            sSource.innerHTML = sources.map(o => `<option value="${o.v}">${o.n}</option>`).join('');
-            if(i===2) sSource.value = 'tons'; if(i===3) sSource.value = 'hours';
+            document.getElementById(`type-${i}`).innerHTML = types.map(o => `<option value="${o.v}">${o.n}</option>`).join('');
+            document.getElementById(`source-${i}`).innerHTML = sources.map(o => `<option value="${o.v}">${o.n}</option>`).join('');
+            if(i===2) document.getElementById(`source-${i}`).value = 'tons';
+            if(i===3) document.getElementById(`source-${i}`).value = 'hours';
+            if(i===4) document.getElementById(`type-${i}`).value = 'radar';
         }
     }
 
     function generateReport() {
-        const startVal = document.getElementById('date-start').value, endVal = document.getElementById('date-end').value, filter = document.getElementById('mat-filter').value;
-        localStorage.setItem('last_start_date', startVal); localStorage.setItem('last_end_date', endVal);
-        const start = new Date(startVal), end = new Date(endVal);
+        const sV = document.getElementById('date-start').value, eV = document.getElementById('date-end').value, filter = document.getElementById('mat-filter').value;
+        localStorage.setItem('last_start_date', sV); localStorage.setItem('last_end_date', eV);
+        const start = new Date(sV), end = new Date(eV);
         let dailyData = {}, hourlyWeight = Array(24).fill(0), daysCount = 0;
 
         for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
@@ -197,9 +220,7 @@
             }
         });
 
-        for(let i=1; i<=4; i++) {
-            renderModule(i, Object.keys(dailyData).sort(), dailyData, hourlyWeight, daysCount);
-        }
+        for(let i=1; i<=4; i++) { renderModule(i, Object.keys(dailyData).sort(), dailyData, hourlyWeight, daysCount); }
     }
 
     function renderModule(idx, labels, dayMap, hWeight, dCount) {
@@ -219,30 +240,38 @@
         const ctx = document.getElementById(`canvas-${idx}`).getContext('2d');
         if (charts[idx]) charts[idx].destroy();
 
+        // --- 修正：散佈圖標籤與繪圖邏輯 ---
+        let configType = (type === 'area' || type === 'stepped-line' || type === 'scatter') ? 'line' : type;
+        if (type === 'scatter') configType = 'scatter';
+
         const ctxO = { 
             responsive: true, maintainAspectRatio: false, 
             layout: { padding: { right: 50, top: 60 } }, 
             plugins: { 
                 legend: { display: false }, 
-                datalabels: { display: true, anchor: 'end', align: 'top', font: { weight: '900', size: 16 }, formatter: v => v == 0?'':parseFloat(v).toFixed(dec) } 
+                datalabels: { 
+                    display: true, anchor: 'end', align: 'top', font: { weight: '900', size: 16 }, 
+                    formatter: v => {
+                        // 修正：散佈圖的 v 是一個物件 {x, y}
+                        const val = typeof v === 'object' ? v.y : v;
+                        return val == 0 ? '' : parseFloat(val).toFixed(dec);
+                    } 
+                } 
             }, 
             scales: { y: { beginAtZero: true } } 
         };
 
-        // 核心邏輯：處理面積圖與其他圖型
-        let configType = (type === 'area' || type === 'stepped-line') ? 'line' : type;
         let config = { type: configType, data: { labels: finalLabels, datasets: [{ data: finalData, backgroundColor: color, borderColor: color, borderWidth: 4 }] }, options: ctxO };
         
         if(type === 'line' || type === 'stepped-line' || type === 'area' || type === 'radar') {
             config.data.datasets[0].fill = (type === 'area' || type === 'line' || type === 'radar');
-            config.data.datasets[0].backgroundColor = color + '44'; // 設定透明度呈現面積感
-            config.data.datasets[0].tension = 0.4;
+            config.data.datasets[0].backgroundColor = color + '44'; config.data.datasets[0].tension = 0.4;
             if(type === 'stepped-line') config.data.datasets[0].stepped = true;
             if(type === 'radar') config.options.scales = { r: { beginAtZero: true } };
         }
         if(type === 'scatter') {
             config.data.datasets[0].data = finalData.map((v, i) => ({x: i, y: v}));
-            config.options.scales.x = { ticks: { callback: v => finalLabels[v] } };
+            config.options.scales.x = { type: 'linear', ticks: { callback: v => finalLabels[v] || '' } };
         }
 
         charts[idx] = new Chart(ctx, config);
@@ -250,19 +279,18 @@
     }
 
     function updateAnalysis(idx, labels, dayMap) {
+        const l = document.getElementById('ui-lang').value || 'zh';
         const totalC = labels.reduce((a, k) => a + dayMap[k].counts, 0);
         const totalT = labels.reduce((a, k) => a + dayMap[k].tons, 0);
         const totalH = labels.reduce((a, k) => a + dayMap[k].hours, 0);
-        const ratio = totalT > 0 ? (totalH / totalT).toFixed(2) : 0;
         
-        // 修正：僅保留數據列表，去除總結文字
         const html = `
-            <div class="stat-line"><span class="stat-label">總入廠貨櫃:</span><span class="stat-num">${totalC}車</span></div>
-            <div class="stat-line"><span class="stat-label">單車平均工時:</span><span class="stat-num">${totalC>0?(totalH/totalC).toFixed(1):0}H</span></div>
-            <div class="stat-line"><span class="stat-label">總卸載重量:</span><span class="stat-num">${totalT.toFixed(1)}T</span></div>
-            <div class="stat-line"><span class="stat-label">單車平均重量:</span><span class="stat-num">${totalC>0?(totalT/totalC).toFixed(1):0}T</span></div>
-            <div class="stat-line"><span class="stat-label">總累計工時:</span><span class="stat-num">${totalH.toFixed(1)}H</span></div>
-            <div class="stat-line"><span class="stat-label">產能比:</span><span class="stat-num">${ratio} H/T</span></div>`;
+            <div class="stat-line"><span class="stat-label">${i18n[l].l1}</span><span class="stat-num">${totalC}</span></div>
+            <div class="stat-line"><span class="stat-label">${i18n[l].l4}</span><span class="stat-num">${totalC>0?(totalH/totalC).toFixed(1):0}H</span></div>
+            <div class="stat-line"><span class="stat-label">${i18n[l].l2}</span><span class="stat-num">${totalT.toFixed(1)}T</span></div>
+            <div class="stat-line"><span class="stat-label">${i18n[l].l5}</span><span class="stat-num">${totalC>0?(totalT/totalC).toFixed(1):0}T</span></div>
+            <div class="stat-line"><span class="stat-label">${i18n[l].l3}</span><span class="stat-num">${totalH.toFixed(1)}H</span></div>
+            <div class="stat-line"><span class="stat-label">${i18n[l].l6}</span><span class="stat-num">${totalT>0?(totalH/totalT).toFixed(2):0}</span></div>`;
         document.getElementById(`box-${idx}`).innerHTML = html;
     }
 
