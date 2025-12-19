@@ -3,229 +3,197 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Container Analysis Dashboard v8.0</title>
+    <title>Container Analytics Pro v9.0</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <style>
         :root {
-            --primary: #2196F3; --secondary: #673AB7; --success: #4CAF50; --bg: #f4f7f6;
-            --white: #ffffff; --text: #333; --border: #e0e0e0;
+            --primary: #2196F3; --secondary: #673AB7; --success: #4CAF50; --warning: #FF9800; --bg: #f8fafc;
+            --white: #ffffff; --text: #1e293b; --border: #e2e8f0;
         }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text); }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text); }
         .container { max-width: 1400px; margin: 0 auto; }
         
-        .dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        /* 篩選區 */
         .filter-card { 
-            background: var(--white); padding: 25px; border-radius: 15px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-end;
+            background: var(--white); padding: 20px; border-radius: 16px; 
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;
+            margin-bottom: 25px; border: 1px solid var(--border);
         }
-        .filter-group { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 250px; }
-        .filter-group label { font-weight: 700; font-size: 0.85rem; color: #555; text-transform: uppercase; }
+        .filter-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 180px; }
+        .filter-group label { font-weight: 700; font-size: 0.75rem; color: #64748b; text-transform: uppercase; }
         
-        select, input { padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; outline: none; transition: border 0.3s; }
-        select:focus, input:focus { border-color: var(--primary); }
-        
-        .btn-run { background: var(--primary); color: white; border: none; padding: 0 35px; border-radius: 10px; cursor: pointer; font-weight: 700; transition: 0.3s; height: 45px; }
-        .btn-run:hover { background: #1565C0; transform: translateY(-1px); }
+        select, input { padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; outline: none; }
+        .btn-run { background: var(--text); color: white; border: none; padding: 0 30px; border-radius: 8px; cursor: pointer; font-weight: 700; height: 40px; transition: 0.2s; }
+        .btn-run:hover { background: #000; }
 
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 25px; margin-top: 25px; }
-        .chart-card { background: var(--white); padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #f0f0f0; padding-bottom: 15px; }
-        .chart-title { font-weight: 800; font-size: 1.1rem; color: #444; }
-        .stat-value { font-size: 1.3rem; font-weight: 800; }
-        
-        .chart-container { height: 300px; width: 100%; }
+        /* 圖表網格 */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 20px; }
+        .chart-card { background: var(--white); padding: 20px; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid var(--border); }
+        .chart-header { display: flex; justify-content: space-between; margin-bottom: 15px; }
+        .chart-title { font-weight: 700; font-size: 1rem; color: #334155; }
+        .chart-container { height: 320px; width: 100%; position: relative; }
 
         #loading {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255,255,255,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 1000;
+            background: rgba(255,255,255,0.8); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 1000;
         }
-        .loader { border: 5px solid #f3f3f3; border-top: 5px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 15px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-    <div id="loading"><div class="loader"></div><h3 id="load-text">雲端資料同步中...</h3></div>
+    <div id="loading"><h3>📊 數據計算中...</h3></div>
 
     <div class="container">
-        <div class="dashboard-header">
-            <h1 style="margin:0; font-size: 1.8rem;">Logistics Analysis <span style="font-weight: 300; color: #888;">報表中心</span></h1>
-            <div id="data-update-tag" style="font-size: 0.8rem; color: #999;"></div>
+        <div class="dashboard-header" style="margin-bottom: 20px;">
+            <h1 style="font-size: 1.5rem; margin:0;">運籌數據核心 <span style="font-weight: 400; color: #64748b;">Logistics Intelligence</span></h1>
         </div>
 
         <div class="filter-card">
             <div class="filter-group">
-                <label>1. 統計月份 (YYYY-MM)</label>
-                <select id="month-select"></select>
+                <label>開始日期</label>
+                <input type="date" id="date-start">
             </div>
             <div class="filter-group">
-                <label>2. 原材料 / SAP CODE 過濾</label>
-                <input list="mat-list" id="mat-filter" placeholder="輸入名稱或編號進行彙整...">
-                <datalist id="mat-list"></datalist>
+                <label>結束日期</label>
+                <input type="date" id="date-end">
             </div>
-            <button class="btn-run" onclick="generateReport()">生成彙整報表</button>
+            <div class="filter-group">
+                <label>關鍵字 (SAP / 材料)</label>
+                <input type="text" id="mat-filter" placeholder="搜尋關鍵字...">
+            </div>
+            <button class="btn-run" onclick="generateReport()">執行分析</button>
         </div>
 
         <div class="stats-grid">
             <div class="chart-card">
-                <div class="chart-header">
-                    <div class="chart-title">🚛 每日入廠次數 (次)</div>
-                    <div id="sum-counts" class="stat-value" style="color:var(--success)">0 次</div>
-                </div>
+                <div class="chart-header"><div class="chart-title">🚛 每日入廠次數 (次)</div></div>
                 <div class="chart-container"><canvas id="countsChart"></canvas></div>
             </div>
 
             <div class="chart-card">
-                <div class="chart-header">
-                    <div class="chart-title">⚖️ 每日入廠重量 (噸)</div>
-                    <div id="sum-tons" class="stat-value" style="color:var(--primary)">0.0 T</div>
-                </div>
+                <div class="chart-header"><div class="chart-title">⚖️ 每日入廠重量 (噸)</div></div>
                 <div class="chart-container"><canvas id="tonsChart"></canvas></div>
             </div>
 
             <div class="chart-card">
-                <div class="chart-header">
-                    <div class="chart-title">⏱️ 每日作業工時 (Hr)</div>
-                    <div id="sum-hours" class="stat-value" style="color:var(--secondary)">0.0 H</div>
-                </div>
+                <div class="chart-header"><div class="chart-title">⏱️ 每日作業工時 (Hr)</div></div>
                 <div class="chart-container"><canvas id="hoursChart"></canvas></div>
+            </div>
+
+            <div class="chart-card">
+                <div class="chart-header"><div class="chart-title">🔥 時段平均統計 (每小時進場頻率)</div></div>
+                <div class="chart-container"><canvas id="hourlyChart"></canvas></div>
             </div>
         </div>
     </div>
 
 <script>
+    // 註冊資料標籤插件
+    Chart.register(ChartDataLabels);
+
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxX-XRuXqIB7JJopFGYaHtiAk6kZfe19bFihOd7HCxrA-ffKQGXDoIfJwwPYFLZER8c/exec";
     let rawData = [];
     let charts = {};
 
     window.onload = async () => {
-        toggleLoading(true, "正在連線 Google Sheets...");
+        document.getElementById('loading').style.display = 'flex';
+        // 設定預設日期為本月
+        const now = new Date();
+        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+        document.getElementById('date-start').value = firstDay;
+        document.getElementById('date-end').value = lastDay;
+
         try {
             const resp = await fetch(`${GAS_URL}?action=loadRecords`);
             const res = await resp.json();
             if (res.result === 'success') {
                 rawData = res.data;
-                initFilters();
                 generateReport();
             }
-        } catch (e) { alert("連線失敗：" + e.message); }
-        toggleLoading(false);
+        } catch (e) { alert("連線失敗"); }
+        document.getElementById('loading').style.display = 'none';
     };
 
-    function initFilters() {
-        const months = new Set();
-        const mats = new Set();
-        rawData.forEach(r => {
-            if (r.startTime && r.startTime.includes('/')) {
-                const parts = r.startTime.split(' ')[0].split('/');
-                months.add(`${parts[2]}-${parts[1]}`);
-            }
-            if (r.formNo) mats.add(r.formNo);
-            if (r.machine) mats.add(r.machine);
-        });
-
-        const mSelect = document.getElementById('month-select');
-        mSelect.innerHTML = Array.from(months).sort().reverse()
-            .map(m => `<option value="${m}">${m}</option>`).join('');
-
-        const mList = document.getElementById('mat-list');
-        mList.innerHTML = Array.from(mats).map(m => `<option value="${m}">`).join('');
-    }
-
     
-    function generateReport() {
-        const targetYM = document.getElementById('month-select').value;
-        const filterStr = document.getElementById('mat-filter').value.toLowerCase();
-        if (!targetYM) return;
 
-        const [year, month] = targetYM.split('-');
-        const daysInMonth = new Date(year, month, 0).getDate();
+    function generateReport() {
+        const start = new Date(document.getElementById('date-start').value);
+        const end = new Date(document.getElementById('date-end').value);
+        const filterStr = document.getElementById('mat-filter').value.toLowerCase();
         
-        // 初始化數據集
-        const dailyData = {};
-        for (let i = 1; i <= daysInMonth; i++) {
-            dailyData[String(i).padStart(2, '0')] = { tons: 0, hours: 0, counts: 0 };
+        let dailyData = {};
+        let hourlySum = Array(24).fill(0); // 24小時分佈
+        let daysCount = 0;
+
+        // 生成日期區間內的每一天
+        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+            const dateStr = d.toISOString().split('T')[0];
+            dailyData[dateStr] = { tons: 0, hours: 0, counts: 0 };
+            daysCount++;
         }
 
-        let totalTons = 0, totalHours = 0, totalCounts = 0;
-
         rawData.forEach(r => {
-            // 1. 抓取 C 欄 Arrival Time 進行日期解析
-            if (!r.startTime) return; 
-            const dateParts = r.startTime.split(' ')[0].split('/'); // DD/MM/YYYY
-            const rYM = `${dateParts[2]}-${dateParts[1]}`;
-            
-            // 篩選
+            if (!r.startTime) return;
+            // 解析 C 欄日期 DD/MM/YYYY HH:mm
+            const dateObj = parseCustomDate(r.startTime);
+            if (!dateObj) return;
+
+            const dateKey = dateObj.toISOString().split('T')[0];
             const isMatch = !filterStr || 
                            (r.formNo && r.formNo.toLowerCase().includes(filterStr)) || 
                            (r.machine && r.machine.toLowerCase().includes(filterStr));
 
-            if (rYM === targetYM && isMatch) {
-                const day = dateParts[0];
-                
-                // 次數彙整 (Arrival 次數)
-                dailyData[day].counts += 1;
-                totalCounts += 1;
-
-                // 2. 噸數計算 (1000 為單位)
-                const kg = parseFloat(r.concernSection) || 0;
-                const tons = kg / 1000;
-                dailyData[day].tons += tons;
-                totalTons += tons;
-
-                // 3. 工時彙整 (抓取 E 欄 Total Time)
-                // 假設 E 欄資料格式為 "120 min" 或 "2.5 hr"
-                const rawTime = r.totalTime || "0"; 
-                dailyData[day].hours += parseTotalTimeToHours(rawTime);
-                totalHours += parseTotalTimeToHours(rawTime);
+            if (dateKey >= dailyData && dailyData[dateKey] && isMatch) {
+                // 次數
+                dailyData[dateKey].counts += 1;
+                // 時段分配 (0-23)
+                hourlySum[dateObj.getHours()] += 1;
+                // 噸數 (KG / 1000, 顯示一位小數)
+                dailyData[dateKey].tons += (parseFloat(r.concernSection) || 0) / 1000;
+                // 工時 (E 欄 Total Time / 60, 顯示一位小數)
+                dailyData[dateKey].hours += (parseFloat(r.totalTime) || 0) / 60;
             }
         });
 
-        updateUI(totalTons, totalHours, totalCounts);
-        renderCharts(dailyData);
+        renderAllCharts(dailyData, hourlySum.map(v => (v / daysCount).toFixed(2)));
     }
 
-    // 解析 Total Time 欄位 (支援 min/hr 混合)
-    function parseTotalTimeToHours(str) {
-        const val = parseFloat(str) || 0;
-        if (str.includes('min')) return val / 60;
-        return val; // 預設為 hr
+    function parseCustomDate(s) {
+        const m = s.match(/(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})/);
+        return m ? new Date(m[3], m[2]-1, m[1], m[4], m[5]) : null;
     }
 
-    function updateUI(t, h, c) {
-        document.getElementById('sum-tons').innerText = t.toFixed(2) + " T";
-        document.getElementById('sum-hours').innerText = h.toFixed(1) + " H";
-        document.getElementById('sum-counts').innerText = c + " 次";
-        document.getElementById('data-update-tag').innerText = "最後更新日期: " + new Date().toLocaleString();
+    function renderAllCharts(dayMap, hourlyAvg) {
+        const labels = Object.keys(dayMap).sort();
+        const dataCounts = labels.map(l => dayMap[l].counts);
+        const dataTons = labels.map(l => dayMap[l].tons.toFixed(1));
+        const dataHours = labels.map(l => dayMap[l].hours.toFixed(1));
+
+        // 1. 次數 (整數)
+        createChart('countsChart', '入廠次數', labels, dataCounts, 'rgba(76, 175, 80, 0.8)', 'bar', 0);
+        // 2. 噸數 (小數1位)
+        createChart('tonsChart', '噸數', labels, dataTons, 'rgba(33, 150, 243, 0.8)', 'line', 1);
+        // 3. 工時 (小數1位)
+        createChart('hoursChart', '工時(Hr)', labels, dataHours, 'rgba(103, 58, 183, 0.8)', 'bar', 1);
+        // 4. 時段平均 (每小時)
+        createChart('hourlyChart', '平均進場頻率', Array.from({length:24}, (_,i)=>i+'時'), hourlyAvg, 'rgba(255, 152, 0, 0.8)', 'line', 2);
     }
 
-    function renderCharts(dayMap) {
-        const labels = Object.keys(dayMap).sort().map(d => d + '日');
-        const dataCounts = labels.map((_, i) => dayMap[String(i+1).padStart(2,'0')].counts);
-        const dataTons = labels.map((_, i) => dayMap[String(i+1).padStart(2,'0')].tons);
-        const dataHours = labels.map((_, i) => dayMap[String(i+1).padStart(2,'0')].hours);
-
-        // 次數圖 (Bar)
-        createChart('countsChart', '入廠次數', dataCounts, 'rgba(76, 175, 80, 0.7)', 'bar');
-        // 噸數圖 (Line)
-        createChart('tonsChart', '入廠噸數 (T)', dataTons, 'rgba(33, 150, 243, 0.7)', 'line');
-        // 工時圖 (Bar)
-        createChart('hoursChart', '作業工時 (Hr)', dataHours, 'rgba(103, 58, 183, 0.7)', 'bar');
-    }
-
-    function createChart(id, label, data, color, type) {
+    function createChart(id, label, labels, data, color, type, decimals) {
         const ctx = document.getElementById(id).getContext('2d');
         if (charts[id]) charts[id].destroy();
         
         charts[id] = new Chart(ctx, {
             type: type,
             data: {
-                labels: Array.from({length: data.length}, (_, i) => (i+1) + '日'),
+                labels: labels,
                 datasets: [{
                     label: label,
                     data: data,
                     backgroundColor: color,
-                    borderColor: color.replace('0.7', '1'),
+                    borderColor: color.replace('0.8', '1'),
                     borderWidth: 2,
                     tension: 0.3,
                     fill: type === 'line'
@@ -234,18 +202,22 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
+                plugins: {
+                    legend: { display: false },
+                    datalabels: { // 數據顯示在點位上
+                        anchor: 'end',
+                        align: 'top',
+                        color: '#475569',
+                        font: { weight: 'bold', size: 11 },
+                        formatter: (value) => value > 0 ? value : ''
+                    }
+                },
                 scales: { 
-                    y: { beginAtZero: true, grid: { color: '#f0f0f0' } },
+                    y: { beginAtZero: true, grid: { display: false }, ticks: { display: false } },
                     x: { grid: { display: false } }
                 }
             }
         });
-    }
-
-    function toggleLoading(show, text) {
-        document.getElementById('loading').style.display = show ? 'flex' : 'none';
-        if(text) document.getElementById('load-text').innerText = text;
     }
 </script>
 </body>
