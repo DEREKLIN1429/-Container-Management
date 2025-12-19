@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Logistics Analysis Pro v21.0</title>
+    <title>Logistics Analysis Pro v22.0</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
@@ -32,15 +32,21 @@
         .btn-run:hover { background: var(--primary); transform: translateY(-2px); }
 
         .stats-grid { display: flex; flex-direction: column; gap: 35px; width: 100%; }
-        .chart-card { background: var(--white); padding: 30px; border-radius: 25px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); cursor: pointer; position: relative; transition: 0.2s; }
+        .chart-card { background: var(--white); padding: 30px; border-radius: 25px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); cursor: pointer; position: relative; transition: 0.2s; overflow: hidden; }
         .chart-card:hover { border: 2px solid var(--primary); }
-        .chart-card::after { content: "📸 Click to Copy as Image"; position: absolute; top: 10px; right: 20px; font-size: 0.8rem; color: var(--primary); font-weight: bold; opacity: 0; }
-        .chart-card:hover::after { opacity: 1; }
-
+        
         .chart-header { margin-bottom: 20px; border-bottom: 3px solid #f1f5f9; padding-bottom: 15px; }
         .chart-title { font-weight: 900; font-size: 1.8rem; color: #1e293b; }
         
-        .analysis-box { margin-top: 25px; padding: 22px; background: #f8fafc; border-left: 8px solid var(--primary); border-radius: 12px; font-size: 1.3rem; line-height: 1.8; color: #334155; }
+        /* 強化數據分析區塊 */
+        .analysis-box { 
+            margin-top: 25px; padding: 25px; background: #f8fafc; border-left: 10px solid var(--primary); 
+            border-radius: 12px; font-size: 1.2rem; line-height: 2; color: #334155; 
+        }
+        .analysis-box hr { border: 0; border-top: 1px solid #e2e8f0; margin: 15px 0; }
+        .stat-line { display: flex; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px dashed #eee; }
+        .stat-label { font-weight: bold; color: #64748b; }
+        .stat-num { font-weight: 900; color: var(--primary); }
 
         .chart-container { height: 500px; width: 100%; position: relative; padding-right: 50px; box-sizing: border-box; }
 
@@ -113,25 +119,13 @@
     let rawData = [];
     let charts = {};
     
-    // --- 語言與預設邏輯 ---
-    const i18n = {
-        zh: { title: "物流運籌大數據分析系統", start: "開始日期", end: "結束日期", mat: "材料名稱篩選", update: "執行分析", cT: "📦 每日貨櫃入廠次數", wT: "⚖️ 每日入廠總重量趨勢 (噸)", hT: "⏱️ 每日卸載貨櫃作業工時加總 (Hr)", aT: "🔥 24H 入廠貨物重量分佈 (噸)" },
-        en: { title: "Logistics Analysis Dashboard", start: "Start Date", end: "End Date", mat: "Material Filter", update: "Analyze", cT: "📦 Daily Container Arrivals", wT: "⚖️ Daily Tonnage Trend (Tons)", hT: "⏱️ Total Daily Unloading Hours (Hr)", aT: "🔥 24H Cargo Weight Distribution (Tons)" },
-        hi: { title: "रसद डेटा विश्लेषण प्रणाली", start: "शुरुआत तिथि", end: "अंतिम तिथि", mat: "सामग्री फ़िल्टर", update: "विश्लेषण", cT: "📦 दैनिक कंटेनर आगमन", wT: "⚖️ दैनिक वजन रुझान (टन)", hT: "⏱️ दैनिक अनलोडिंग समय (Hr)", aT: "🔥 24H माल का वजन वितरण (टन)" }
-    };
-
     window.onload = async () => {
         toggleLoading(true);
-        
-        // 🔹 強制預設區間為「每月1號至末日」
         const now = new Date();
         const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
         const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
-        
-        // 🔹 檢查有無儲存過的紀錄
         const savedStart = localStorage.getItem('last_start_date');
         const savedEnd = localStorage.getItem('last_end_date');
-        
         document.getElementById('date-start').value = savedStart || firstDay;
         document.getElementById('date-end').value = savedEnd || lastDay;
 
@@ -153,14 +147,11 @@
         const startVal = document.getElementById('date-start').value;
         const endVal = document.getElementById('date-end').value;
         const filter = document.getElementById('mat-filter').value;
-        
-        // 🔹 儲存使用者選擇的日期區間
         localStorage.setItem('last_start_date', startVal);
         localStorage.setItem('last_end_date', endVal);
 
         const start = new Date(startVal);
         const end = new Date(endVal);
-
         let dailyData = {};
         let hourlyWeight = Array(24).fill(0);
         let daysCount = 0;
@@ -191,30 +182,42 @@
         doDeepAnalysis(labels, dailyData, hourlyWeight, daysCount);
     }
 
-    // --- 核心繪圖 (加入工時 vs 數量的雙軸比對) ---
     function renderCharts(labels, dayMap, hWeight, dCount) {
-        const ctxO = { 
-            responsive: true, maintainAspectRatio: false, 
-            layout: { padding: { right: 50, top: 60, left: 10, bottom: 10 } }, 
-            plugins: { legend: { display: false }, datalabels: { display: true, anchor: 'end', align: 'top', offset: 12, color: '#0f172a', font: { weight: '900', size: 18 } } }, 
-            scales: { y: { beginAtZero: true, grid: { color: '#e2e8f0' }, ticks: { font: { size: 16, weight: 'bold' } } }, x: { ticks: { font: { size: 13, weight: 'bold' } } } } 
-        };
+        const ctxO = { responsive: true, maintainAspectRatio: false, layout: { padding: { right: 50, top: 60, left: 10, bottom: 10 } }, plugins: { legend: { display: false }, datalabels: { display: true, anchor: 'end', align: 'top', offset: 12, color: '#0f172a', font: { weight: '900', size: 18 } } }, scales: { y: { beginAtZero: true, grid: { color: '#e2e8f0' }, ticks: { font: { size: 16, weight: 'bold' } } }, x: { ticks: { font: { size: 13, weight: 'bold' } } } } };
         
         createChart('countsChart', labels, [{ label: '入廠次數', data: labels.map(l=>dayMap[l].counts), color: '#4CAF50', type: 'bar' }], 0, ctxO);
         createChart('tonsChart', labels, [{ label: '入廠重量', data: labels.map(l=>dayMap[l].tons.toFixed(1)), color: '#2196F3', type: 'line', fill: true }], 1, ctxO);
         
-        // 🔹 每日作業工時 (Hr) 圖表：加入貨櫃數量 (雙軸)
-        const hoursCtxO = JSON.parse(JSON.stringify(ctxO));
-        hoursCtxO.scales.y1 = { position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, ticks: { color: '#4CAF50', font: { size: 14, weight: 'bold' } }, title: { display: true, text: '貨櫃量 (Units)' } };
-        createChart('hoursChart', labels, [
-            { label: '工時 (Hr)', data: labels.map(l=>dayMap[l].hours.toFixed(1)), color: '#FF9800', type: 'bar', yAxisID: 'y' },
-            { label: '貨櫃數量', data: labels.map(l=>dayMap[l].counts), color: '#4CAF50', type: 'line', yAxisID: 'y1', tension: 0.4 }
-        ], 1, hoursCtxO);
+        // 修正：去除折線圖，僅保留數據標籤與長條
+        createChart('hoursChart', labels, [{ label: '工時 (Hr)', data: labels.map(l=>dayMap[l].hours.toFixed(1)), color: '#FF9800', type: 'bar' }], 1, ctxO);
 
         createChart('hourlyChart', Array.from({length:24},(_,i)=>i+'h'), [{ label: '平均重量', data: hWeight.map(v=>(v/dCount).toFixed(1)), color: '#9C27B0', type: 'line', fill: true }], 1, ctxO);
     }
 
-    // --- 截圖功能 (複製為圖片) ---
+    function doDeepAnalysis(labels, dayMap, hWeight, dCount) {
+        const totalCounts = labels.reduce((acc, k) => acc + dayMap[k].counts, 0);
+        const totalTons = labels.reduce((acc, k) => acc + dayMap[k].tons, 0);
+        const totalHours = labels.reduce((acc, k) => acc + dayMap[k].hours, 0);
+        
+        // 跨維度分析
+        const avgHoursPerUnit = totalCounts > 0 ? (totalHours / totalCounts).toFixed(2) : 0;
+        const avgTonsPerUnit = totalCounts > 0 ? (totalTons / totalCounts).toFixed(2) : 0;
+        const laborEfficiency = totalTons > 0 ? (totalHours / totalTons).toFixed(2) : 0;
+
+        const summaryHTML = `
+            <div class="stat-line"><span class="stat-label">總入廠貨櫃量:</span> <span class="stat-num">${totalCounts} 車次</span></div>
+            <div class="stat-line"><span class="stat-label">總卸載重量:</span> <span class="stat-num">${totalTons.toFixed(1)} 噸</span></div>
+            <div class="stat-line"><span class="stat-label">總累計工時:</span> <span class="stat-num">${totalHours.toFixed(1)} Hr</span></div>
+            <hr>
+            <div class="stat-line"><span class="stat-label">平均單車卸載工時:</span> <span class="stat-num">${avgHoursPerUnit} Hr / 車</span></div>
+            <div class="stat-line"><span class="stat-label">平均單車負載重量:</span> <span class="stat-num">${avgTonsPerUnit} 噸 / 車</span></div>
+            <div class="stat-line"><span class="stat-label">勞動產能比 (工時/噸):</span> <span class="stat-num">${laborEfficiency} Hr/Ton</span></div>
+        `;
+
+        // 統一更新到所有分析框
+        document.querySelectorAll('.analysis-box').forEach(box => box.innerHTML = summaryHTML);
+    }
+
     async function copyAsImage(element) {
         toggleLoading(true, "📸 Generating Image...");
         try {
@@ -222,40 +225,22 @@
             canvas.toBlob(async (blob) => {
                 const item = new ClipboardItem({ "image/png": blob });
                 await navigator.clipboard.write([item]);
-                alert("📸 圖片已複製到剪貼簿！ (Image Copied)");
+                alert("📸 圖片已複製！ (Image Copied)");
             });
         } catch (e) { alert("Copy Image Failed"); }
         toggleLoading(false);
     }
 
-    // --- 其餘輔助函式 ---
     function createChart(id, labels, datasets, decimals, options) {
         const ctx = document.getElementById(id).getContext('2d');
         if (charts[id]) charts[id].destroy();
         charts[id] = new Chart(ctx, { 
             data: { labels: labels, datasets: datasets.map(ds => ({
                 label: ds.label, data: ds.data, backgroundColor: ds.fill ? ds.color+'33' : ds.color, 
-                borderColor: ds.color, borderWidth: 4, type: ds.type, yAxisID: ds.yAxisID || 'y', tension: ds.tension || 0, fill: ds.fill || false
+                borderColor: ds.color, borderWidth: 4, type: ds.type, tension: 0.4, fill: ds.fill || false
             }))}, 
             options: { ...options, plugins: { ...options.plugins, datalabels: { ...options.plugins.datalabels, formatter: (v) => v==0?'':(decimals===0?Math.round(v):parseFloat(v).toFixed(1)) } } } 
         });
-    }
-
-    function doDeepAnalysis(labels, dayMap, hWeight, dCount) {
-        const l = document.getElementById('ui-lang').value;
-        const totalCounts = labels.reduce((acc, k) => acc + dayMap[k].counts, 0);
-        const totalTons = labels.reduce((acc, k) => acc + dayMap[k].tons, 0);
-        const totalHours = labels.reduce((acc, k) => acc + dayMap[k].hours, 0);
-        const peakH = hWeight.indexOf(Math.max(...hWeight));
-        const reports = {
-            zh: [`🚛 <b>進場分析：</b>本期總入廠 <b>${totalCounts}</b> 車次。`, `⚖️ <b>產能重量：</b>累積 <b>${totalTons.toFixed(1)}</b> 噸。`, `⏱️ <b>工時效能：</b>總工時 <b>${totalHours.toFixed(1)}</b> Hr，與貨櫃量呈現 ${(totalHours > totalCounts*0.8) ? '高負荷' : '正常'} 關係。`, `🔥 <b>峰值：</b><b>${peakH}:00</b> 為重量高峰。`],
-            en: [`🚛 <b>Traffic:</b> <b>${totalCounts}</b> units.`, `⚖️ <b>Weight:</b> <b>${totalTons.toFixed(1)}</b> tons.`, `⏱️ <b>Labor:</b> <b>${totalHours.toFixed(1)}</b> Hr.`, `🔥 <b>Peak:</b> <b>${peakH}:00</b>.`],
-            hi: [`🚛 <b>ट्रैफ़िक:</b> <b>${totalCounts}</b> आगमन।`, `⚖️ <b>वजन:</b> <b>${totalTons.toFixed(1)}</b> टन।`, `⏱️ <b>कार्य:</b> <b>${totalHours.toFixed(1)}</b> घंटे।`, `🔥 <b>पीक:</b> <b>${peakH}:00</b>.`]
-        };
-        document.getElementById('analysis-counts').innerHTML = reports[l][0];
-        document.getElementById('analysis-tons').innerHTML = reports[l][1];
-        document.getElementById('analysis-hours').innerHTML = reports[l][2];
-        document.getElementById('analysis-hourly').innerHTML = reports[l][3];
     }
 
     function toggleLoading(show, msg) { document.getElementById('loading').style.display = show ? 'flex' : 'none'; if(msg) document.querySelector('#loading h2').innerText = msg; }
@@ -263,7 +248,6 @@
         const mats = new Set(); rawData.forEach(r => { if (r.formNo) mats.add(r.formNo); });
         document.getElementById('mat-list').innerHTML = Array.from(mats).sort().map(m => `<option value="${m}">`).join('');
     }
-    function changeLanguage() { const l = document.getElementById('ui-lang').value; document.getElementById('main-title').innerText = i18n[l].title; generateReport(); }
 </script>
 </body>
 </html>
