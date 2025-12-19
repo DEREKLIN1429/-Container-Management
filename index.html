@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Logistics Analysis Pro v28.0</title>
+    <title>Logistics Analysis Pro v29.0</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
@@ -15,7 +15,6 @@
         body { font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--text); }
         .container { max-width: 1400px; margin: 0 auto; width: 100%; }
         
-        /* 頂部導覽 */
         .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .btn-icon { background: var(--white); border: 2px solid var(--border); border-radius: 8px; padding: 8px 12px; cursor: pointer; font-size: 1.2rem; }
 
@@ -35,7 +34,6 @@
         input { padding: 15px; border: 3px solid #e2e8f0; border-radius: 12px; font-size: 1.1rem; font-weight: 900; background-color: #f8fafc; }
         .btn-run { background: var(--accent); color: white; border: none; border-radius: 15px; cursor: pointer; font-weight: 900; font-size: 1.4rem; height: 65px; width: 150px; }
 
-        /* 圖表卡片獨立配置區 */
         .stats-grid { display: flex; flex-direction: column; gap: 40px; }
         .chart-card { background: var(--white); padding: 30px; border-radius: 25px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); cursor: pointer; border: 3px solid transparent; }
         .chart-card:hover { border-color: var(--primary); }
@@ -43,16 +41,15 @@
         .chart-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; border-bottom: 3px solid #f1f5f9; padding-bottom: 10px; flex-wrap: wrap; }
         .chart-title { font-weight: 900; font-size: 1.6rem; flex: 1; }
         
-        /* 單獨圖表設定選單 */
         .chart-controls { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
         .chart-select { padding: 6px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.85rem; font-weight: bold; background: #fff; }
 
+        /* 數據分析 2欄3行 佈局 */
         .analysis-box { margin-top: 20px; padding: 20px; background: #f8fafc; border-left: 8px solid var(--primary); border-radius: 12px; }
         .stat-grid-mini { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .stat-line { display: flex; flex-direction: column; border-bottom: 1px dashed #eee; padding-bottom: 5px; }
         .stat-label { font-weight: bold; color: #64748b; font-size: 0.8rem; }
         .stat-num { font-weight: 900; color: var(--primary); font-size: 1rem; }
-        .insight-box { margin-top: 15px; padding: 12px; background: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px; font-size: 0.95rem; color: #92400e; font-weight: bold; }
 
         .chart-container { height: 500px; width: 100%; position: relative; padding-right: 50px; }
         #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(15, 23, 42, 0.9); color: white; padding: 12px 30px; border-radius: 30px; font-weight: bold; z-index: 3000; display: none; }
@@ -62,7 +59,7 @@
 
     <div id="loading" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); display:none; flex-direction:column; align-items:center; justify-content:center; z-index:5000;">
         <div style="border:8px solid #f3f3f3; border-top:8px solid var(--primary); border-radius:50%; width:60px; height:60px; animation:spin 1s linear infinite;"></div>
-        <h2 id="load-msg" style="margin-top:20px; font-weight:900;">資料彙整中...</h2>
+        <h2 style="margin-top:20px; font-weight:900;">資料分析中...</h2>
     </div>
     <div id="toast">✅ Image Copied!</div>
 
@@ -76,7 +73,7 @@
 
     <div class="container">
         <div class="top-bar">
-            <h1 id="main-title" style="font-weight: 900; font-size: 1.8rem; margin:0;">物流分析系統 v28.0</h1>
+            <h1 id="main-title" style="font-weight: 900; font-size: 1.8rem; margin:0;">物流分析報表 v29.0</h1>
             <div class="control-group">
                 <select id="ui-lang" class="lang-select" onchange="changeLanguage()"><option value="zh">繁體中文</option><option value="en">English</option></select>
                 <button class="btn-icon" onclick="toggleSettings()">⚙️</button>
@@ -93,14 +90,14 @@
         <div class="stats-grid">
             <div class="chart-card" id="card-1" onclick="copyAsImage(this)">
                 <div class="chart-header">
-                    <div class="chart-title" id="tit-1">📦 貨櫃入廠次數分析</div>
+                    <div class="chart-title" id="tit-1">📦 貨櫃入廠次數</div>
                     <div class="chart-controls">
                         <select id="type-1" class="chart-select" onclick="event.stopPropagation()" onchange="generateReport()"></select>
                         <select id="source-1" class="chart-select" onclick="event.stopPropagation()" onchange="generateReport()"></select>
                     </div>
                 </div>
                 <div class="chart-container"><canvas id="canvas-1"></canvas></div>
-                <div class="analysis-box"><div id="box-1" class="stat-grid-mini"></div><div class="insight-box" id="ins-1"></div></div>
+                <div class="analysis-box"><div id="box-1" class="stat-grid-mini"></div></div>
             </div>
 
             <div class="chart-card" id="card-2" onclick="copyAsImage(this)">
@@ -112,31 +109,31 @@
                     </div>
                 </div>
                 <div class="chart-container"><canvas id="canvas-2"></canvas></div>
-                <div class="analysis-box"><div id="box-2" class="stat-grid-mini"></div><div class="insight-box" id="ins-2"></div></div>
+                <div class="analysis-box"><div id="box-2" class="stat-grid-mini"></div></div>
             </div>
 
             <div class="chart-card" id="card-3" onclick="copyAsImage(this)">
                 <div class="chart-header">
-                    <div class="chart-title" id="tit-3">⏱️ 作業工時效率分析</div>
+                    <div class="chart-title" id="tit-3">⏱️ 作業工時分析</div>
                     <div class="chart-controls">
                         <select id="type-3" class="chart-select" onclick="event.stopPropagation()" onchange="generateReport()"></select>
                         <select id="source-3" class="chart-select" onclick="event.stopPropagation()" onchange="generateReport()"></select>
                     </div>
                 </div>
                 <div class="chart-container"><canvas id="canvas-3"></canvas></div>
-                <div class="analysis-box"><div id="box-3" class="stat-grid-mini"></div><div class="insight-box" id="ins-3"></div></div>
+                <div class="analysis-box"><div id="box-3" class="stat-grid-mini"></div></div>
             </div>
 
             <div class="chart-card" id="card-4" onclick="copyAsImage(this)">
                 <div class="chart-header">
-                    <div class="chart-title" id="tit-4">🔥 24H 流量分佈趨勢</div>
+                    <div class="chart-title" id="tit-4">🔥 24H 流量分佈</div>
                     <div class="chart-controls">
                         <select id="type-4" class="chart-select" onclick="event.stopPropagation()" onchange="generateReport()"></select>
                         <select id="source-4" class="chart-select" onclick="event.stopPropagation()" onchange="generateReport()"></select>
                     </div>
                 </div>
                 <div class="chart-container"><canvas id="canvas-4"></canvas></div>
-                <div class="analysis-box"><div id="box-4" class="stat-grid-mini"></div><div class="insight-box" id="ins-4"></div></div>
+                <div class="analysis-box"><div id="box-4" class="stat-grid-mini"></div></div>
             </div>
         </div>
     </div>
@@ -145,11 +142,6 @@
     Chart.register(ChartDataLabels);
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxX-XRuXqIB7JJopFGYaHtiAk6kZfe19bFihOd7HCxrA-ffKQGXDoIfJwwPYFLZER8c/exec";
     let rawData = [], charts = {};
-
-    const i18n = {
-        zh: { s1: "總入廠:", s2: "總重量:", s3: "總工時:", s4: "單車工時:", s5: "單車重量:", s6: "產能比:", bar: "長條圖", line: "趨勢圖", scatter: "散佈圖", bubble: "氣泡圖", radar: "雷達圖", stepped: "階梯圖", 
-              source_counts: "來源: 次數", source_tons: "來源: 重量(K)", source_hours: "來源: 工時(E)" }
-    };
 
     window.onload = async () => {
         loadSettings();
@@ -169,26 +161,24 @@
     
 
     function initUI() {
-        const types = [ {v:'bar', n:'長條圖'}, {v:'line', n:'趨勢圖'}, {v:'scatter', n:'散佈圖'}, {v:'bubble', n:'氣泡圖'}, {v:'radar', n:'雷達圖'}, {v:'stepped-line', n:'階梯圖'} ];
+        const types = [ {v:'bar', n:'長條圖'}, {v:'line', n:'趨勢圖'}, {v:'area', n:'面積圖'}, {v:'scatter', n:'散佈圖'}, {v:'radar', n:'雷達圖'}, {v:'stepped-line', n:'階梯圖'} ];
         const sources = [ {v:'counts', n:'資料項: 次數'}, {v:'tons', n:'資料項: 重量(噸)'}, {v:'hours', n:'資料項: 工時(Hr)'} ];
         
         for(let i=1; i<=4; i++) {
             const sType = document.getElementById(`type-${i}`);
             sType.innerHTML = types.map(o => `<option value="${o.v}">${o.n}</option>`).join('');
-            // 預設分配不同類型
-            if(i===2) sType.value = 'line'; if(i===4) sType.value = 'radar';
+            if(i===2) sType.value = 'area'; if(i===4) sType.value = 'radar';
             
             const sSource = document.getElementById(`source-${i}`);
             sSource.innerHTML = sources.map(o => `<option value="${o.v}">${o.n}</option>`).join('');
-            // 預設分配不同來源
             if(i===2) sSource.value = 'tons'; if(i===3) sSource.value = 'hours';
         }
     }
 
     function generateReport() {
-        const sV = document.getElementById('date-start').value, eV = document.getElementById('date-end').value, filter = document.getElementById('mat-filter').value;
-        localStorage.setItem('last_start_date', sV); localStorage.setItem('last_end_date', eV);
-        const start = new Date(sV), end = new Date(eV);
+        const startVal = document.getElementById('date-start').value, endVal = document.getElementById('date-end').value, filter = document.getElementById('mat-filter').value;
+        localStorage.setItem('last_start_date', startVal); localStorage.setItem('last_end_date', endVal);
+        const start = new Date(startVal), end = new Date(endVal);
         let dailyData = {}, hourlyWeight = Array(24).fill(0), daysCount = 0;
 
         for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
@@ -207,7 +197,6 @@
             }
         });
 
-        // 獨立為每個圖表模塊執行渲染
         for(let i=1; i<=4; i++) {
             renderModule(i, Object.keys(dailyData).sort(), dailyData, hourlyWeight, daysCount);
         }
@@ -224,7 +213,6 @@
         else if(source === 'tons') data = labels.map(l => dayMap[l].tons);
         else if(source === 'hours') data = labels.map(l => dayMap[l].hours);
 
-        // 如果是 24H 流量，標籤需換成 0-23h
         const finalLabels = idx === 4 ? Array.from({length:24},(_,i)=>i+'h') : labels;
         const finalData = idx === 4 ? hWeight.map(v => v/dCount) : data;
 
@@ -236,34 +224,46 @@
             layout: { padding: { right: 50, top: 60 } }, 
             plugins: { 
                 legend: { display: false }, 
-                datalabels: { display: true, anchor: 'end', align: 'top', font: { weight: '900', size: 16 }, formatter: v => v==0?'':parseFloat(v).toFixed(dec) } 
+                datalabels: { display: true, anchor: 'end', align: 'top', font: { weight: '900', size: 16 }, formatter: v => v == 0?'':parseFloat(v).toFixed(dec) } 
             }, 
             scales: { y: { beginAtZero: true } } 
         };
 
-        let config = { type: type === 'stepped-line' ? 'line' : type, data: { labels: finalLabels, datasets: [{ data: finalData, backgroundColor: color, borderColor: color, borderWidth: 4 }] }, options: ctxO };
-        if(type === 'line' || type === 'stepped-line' || type === 'radar') {
-            config.data.datasets[0].fill = true; config.data.datasets[0].backgroundColor = color+'33'; config.data.datasets[0].tension = 0.4;
+        // 核心邏輯：處理面積圖與其他圖型
+        let configType = (type === 'area' || type === 'stepped-line') ? 'line' : type;
+        let config = { type: configType, data: { labels: finalLabels, datasets: [{ data: finalData, backgroundColor: color, borderColor: color, borderWidth: 4 }] }, options: ctxO };
+        
+        if(type === 'line' || type === 'stepped-line' || type === 'area' || type === 'radar') {
+            config.data.datasets[0].fill = (type === 'area' || type === 'line' || type === 'radar');
+            config.data.datasets[0].backgroundColor = color + '44'; // 設定透明度呈現面積感
+            config.data.datasets[0].tension = 0.4;
             if(type === 'stepped-line') config.data.datasets[0].stepped = true;
             if(type === 'radar') config.options.scales = { r: { beginAtZero: true } };
         }
-        if(type === 'scatter') { config.data.datasets[0].data = finalData.map((v, i) => ({x: i, y: v})); config.options.scales.x = { ticks: { callback: v => finalLabels[v] } }; }
+        if(type === 'scatter') {
+            config.data.datasets[0].data = finalData.map((v, i) => ({x: i, y: v}));
+            config.options.scales.x = { ticks: { callback: v => finalLabels[v] } };
+        }
 
         charts[idx] = new Chart(ctx, config);
-        updateAnalysis(idx, labels, dayMap, hWeight, dCount);
+        updateAnalysis(idx, labels, dayMap);
     }
 
-    function updateAnalysis(idx, labels, dayMap, hWeight, dCount) {
+    function updateAnalysis(idx, labels, dayMap) {
         const totalC = labels.reduce((a, k) => a + dayMap[k].counts, 0);
         const totalT = labels.reduce((a, k) => a + dayMap[k].tons, 0);
         const totalH = labels.reduce((a, k) => a + dayMap[k].hours, 0);
         const ratio = totalT > 0 ? (totalH / totalT).toFixed(2) : 0;
         
-        const html = `<div class="stat-line"><span class="stat-label">總入廠:</span><span class="stat-num">${totalC}車</span></div><div class="stat-line"><span class="stat-label">單車平均工時:</span><span class="stat-num">${totalC>0?(totalH/totalC).toFixed(1):0}H</span></div><div class="stat-line"><span class="stat-label">總重量:</span><span class="stat-num">${totalT.toFixed(1)}T</span></div><div class="stat-line"><span class="stat-label">單車平均重量:</span><span class="stat-num">${totalC>0?(totalT/totalC).toFixed(1):0}T</span></div><div class="stat-line"><span class="stat-label">總工時:</span><span class="stat-num">${totalH.toFixed(1)}H</span></div><div class="stat-line"><span class="stat-label">產能比:</span><span class="stat-num">${ratio} H/T</span></div>`;
+        // 修正：僅保留數據列表，去除總結文字
+        const html = `
+            <div class="stat-line"><span class="stat-label">總入廠貨櫃:</span><span class="stat-num">${totalC}車</span></div>
+            <div class="stat-line"><span class="stat-label">單車平均工時:</span><span class="stat-num">${totalC>0?(totalH/totalC).toFixed(1):0}H</span></div>
+            <div class="stat-line"><span class="stat-label">總卸載重量:</span><span class="stat-num">${totalT.toFixed(1)}T</span></div>
+            <div class="stat-line"><span class="stat-label">單車平均重量:</span><span class="stat-num">${totalC>0?(totalT/totalC).toFixed(1):0}T</span></div>
+            <div class="stat-line"><span class="stat-label">總累計工時:</span><span class="stat-num">${totalH.toFixed(1)}H</span></div>
+            <div class="stat-line"><span class="stat-label">產能比:</span><span class="stat-num">${ratio} H/T</span></div>`;
         document.getElementById(`box-${idx}`).innerHTML = html;
-
-        const insight = ratio > 0.5 ? "⚠️ 作業效率偏低，建議檢查人力分配。" : "✅ 作業效率良好，流程穩定。";
-        document.getElementById(`ins-${idx}`).innerHTML = insight;
     }
 
     async function copyAsImage(element) {
