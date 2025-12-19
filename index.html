@@ -3,57 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Logistics Analysis Pro v12.0</title>
+    <title>Logistics Analysis Pro v13.0 - 3D Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <style>
         :root {
-            --primary: #2196F3; --secondary: #673AB7; --success: #4CAF50; --warning: #FF9800; --bg: #f8fafc;
-            --white: #ffffff; --text: #0f172a; --border: #cbd5e1;
+            --primary: #2196F3; --secondary: #673AB7; --success: #4CAF50; --warning: #FF9800; --bg: #eef2f7;
+            --white: #ffffff; --text: #1e293b; --border: #cbd5e1;
         }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text); }
-        .container { max-width: 1200px; margin: 0 auto; }
+        .container { max-width: 1300px; margin: 0 auto; }
         
-        .dashboard-header { margin-bottom: 25px; text-align: center; }
-        
-        /* 篩選器樣式 */
+        .dashboard-header { text-align: center; margin-bottom: 30px; }
+        .dashboard-header h1 { font-size: 2rem; color: #0f172a; margin: 0; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
+
         .filter-card { 
-            background: var(--white); padding: 25px; border-radius: 12px; 
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-end;
-            margin-bottom: 30px; border: 1px solid var(--border);
+            background: var(--white); padding: 25px; border-radius: 20px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05); display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-end;
+            margin-bottom: 35px; border: 1px solid var(--border);
         }
         .filter-group { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 250px; }
-        .filter-group label { font-weight: 700; font-size: 0.85rem; color: #475569; }
+        .filter-group label { font-weight: 700; font-size: 0.85rem; color: #64748b; }
         
-        select, input { padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 15px; outline: none; }
-        .btn-run { background: #0f172a; color: white; border: none; padding: 0 40px; border-radius: 8px; cursor: pointer; font-weight: 700; height: 48px; transition: 0.2s; }
-        .btn-run:hover { background: #334155; }
-
-        /* 圖表區域 */
-        .stats-grid { display: flex; flex-direction: column; gap: 30px; }
-        .chart-card { background: var(--white); padding: 30px; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid var(--border); }
-        .chart-header { margin-bottom: 20px; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; }
-        .chart-title { font-weight: 800; font-size: 1.2rem; color: #1e293b; display: flex; align-items: center; gap: 10px; }
+        select, input { padding: 12px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 15px; outline: none; transition: 0.3s; }
+        select:focus, input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1); }
         
-        /* 增加圖表高度與留白，防止標籤被遮擋 */
-        .chart-container { height: 480px; width: 100%; position: relative; }
+        .btn-run { background: linear-gradient(135deg, #0f172a 0%, #334155 100%); color: white; border: none; padding: 0 45px; border-radius: 12px; cursor: pointer; font-weight: 700; height: 50px; transition: 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .btn-run:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.3); }
 
-        #loading {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255,255,255,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 1000;
-        }
+        .stats-grid { display: flex; flex-direction: column; gap: 40px; }
+        .chart-card { background: var(--white); padding: 30px; border-radius: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #fff; position: relative; }
+        .chart-header { margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f8fafc; padding-bottom: 15px; }
+        .chart-title { font-weight: 800; font-size: 1.3rem; color: #1e293b; }
+        .active-filter-tag { font-size: 0.9rem; background: #f1f5f9; color: var(--primary); padding: 4px 12px; border-radius: 20px; font-weight: 600; }
+        
+        .chart-container { height: 500px; width: 100%; position: relative; }
+
+        #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(238,242,247,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; }
         .loader { border: 6px solid #f3f3f3; border-top: 6px solid var(--primary); border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-    <div id="loading"><div class="loader"></div><h3 style="margin-top:20px;">大數據計算中...</h3></div>
+    <div id="loading"><div class="loader"></div><h3 style="margin-top:20px; color:#1e293b;">🚀 立體數據模型構建中...</h3></div>
 
     <div class="container">
         <div class="dashboard-header">
-            <h1 style="margin:0;">貨櫃物流大數據報表中心</h1>
-            <p style="color: #64748b;">Daily Logistics & Analysis Hub</p>
+            <h1>Logistics Visual Intelligence</h1>
+            <p>立體化物流數據分析系統</p>
         </div>
 
         <div class="filter-card">
@@ -66,38 +64,49 @@
                 <input type="date" id="date-end">
             </div>
             <div class="filter-group">
-                <label>🔍 原材料名稱 (下拉選擇或輸入)</label>
+                <label>🔍 原材料名稱 (下拉或輸入)</label>
                 <input list="mat-list" id="mat-filter" placeholder="請選擇或輸入 Material Name...">
                 <datalist id="mat-list"></datalist>
             </div>
-            <button class="btn-run" onclick="generateReport()">執行統計</button>
+            <button class="btn-run" onclick="generateReport()">執行分析</button>
         </div>
 
         <div class="stats-grid">
             <div class="chart-card">
-                <div class="chart-header"><div class="chart-title">🚛 每日入廠次數統計 (次)</div></div>
+                <div class="chart-header">
+                    <div class="chart-title">📦 每日入廠次數</div>
+                    <div id="tag-counts" class="active-filter-tag">全部項目</div>
+                </div>
                 <div class="chart-container"><canvas id="countsChart"></canvas></div>
             </div>
 
             <div class="chart-card">
-                <div class="chart-header"><div class="chart-title">⚖️ 每日入廠總重量趨勢 (噸)</div></div>
+                <div class="chart-header">
+                    <div class="chart-title">📐 每日入廠重量 (噸)</div>
+                    <div id="tag-tons" class="active-filter-tag">全部項目</div>
+                </div>
                 <div class="chart-container"><canvas id="tonsChart"></canvas></div>
             </div>
 
             <div class="chart-card">
-                <div class="chart-header"><div class="chart-title">⏱️ 每日作業總工時 (小時)</div></div>
+                <div class="chart-header">
+                    <div class="chart-title">⏳ 每日作業工時 (Hr)</div>
+                    <div id="tag-hours" class="active-filter-tag">全部項目</div>
+                </div>
                 <div class="chart-container"><canvas id="hoursChart"></canvas></div>
             </div>
 
             <div class="chart-card">
-                <div class="chart-header"><div class="chart-title">🔥 24小時進場高峰分析 (平均)</div></div>
+                <div class="chart-header">
+                    <div class="chart-title">🕙 24H 流量分佈 (平均)</div>
+                    <div id="tag-hourly" class="active-filter-tag">全部項目</div>
+                </div>
                 <div class="chart-container"><canvas id="hourlyChart"></canvas></div>
             </div>
         </div>
     </div>
 
 <script>
-    // 註冊 DataLabels
     Chart.register(ChartDataLabels);
 
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxX-XRuXqIB7JJopFGYaHtiAk6kZfe19bFihOd7HCxrA-ffKQGXDoIfJwwPYFLZER8c/exec";
@@ -132,11 +141,16 @@
     }
 
     
+
     function generateReport() {
         const start = new Date(document.getElementById('date-start').value);
         const end = new Date(document.getElementById('date-end').value);
-        const matFilter = document.getElementById('mat-filter').value.toLowerCase();
+        const matFilter = document.getElementById('mat-filter').value;
+        const matFilterDisplay = matFilter ? matFilter : "全部項目";
         
+        // 更新圖表上的材料名稱顯示
+        document.querySelectorAll('.active-filter-tag').forEach(tag => tag.innerText = matFilterDisplay);
+
         let dailyData = {};
         let hourlySum = Array(24).fill(0);
         let daysCount = 0;
@@ -153,7 +167,7 @@
             if (!dObj) return;
 
             const dKey = dObj.toISOString().split('T')[0];
-            const isMatch = !matFilter || (r.formNo && r.formNo.toLowerCase().includes(matFilter));
+            const isMatch = !matFilter || (r.formNo && r.formNo === matFilter);
 
             if (dailyData[dKey] && isMatch) {
                 dailyData[dKey].counts += 1;
@@ -171,22 +185,34 @@
         return m ? new Date(m[3], m[2]-1, m[1], m[4], m[5]) : null;
     }
 
+    // 建立 3D 效果的漸層
+    function getGradient(ctx, color) {
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, color);
+        gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        return gradient;
+    }
+
     function renderCharts(dayMap, hAvg) {
         const labels = Object.keys(dayMap).sort();
         const cData = labels.map(l => dayMap[l].counts);
         const tData = labels.map(l => dayMap[l].tons.toFixed(1));
         const hData = labels.map(l => dayMap[l].hours.toFixed(1));
 
-        createChart('countsChart', '入廠次數', labels, cData, 'rgba(76, 175, 80, 0.8)', 'bar', 0);
-        createChart('tonsChart', '入廠重量(噸)', labels, tData, 'rgba(33, 150, 243, 0.8)', 'line', 1);
-        createChart('hoursChart', '作業工時(小時)', labels, hData, 'rgba(103, 58, 183, 0.8)', 'bar', 1);
-        createChart('hourlyChart', '平均進場頻率', Array.from({length:24},(_,i)=>i+'時'), hAvg, 'rgba(255, 152, 0, 0.8)', 'line', 2);
+        // 次數: 立體長條圖
+        createChart('countsChart', '入廠次數', labels, cData, 'rgba(76, 175, 80, 0.9)', 'bar', 0);
+        // 重量: 立體面積趨勢圖
+        createChart('tonsChart', '入廠重量', labels, tData, 'rgba(33, 150, 243, 0.9)', 'line', 1, true);
+        // 工時: 橫向立體長條圖
+        createChart('hoursChart', '作業工時', labels, hData, 'rgba(103, 58, 183, 0.9)', 'bar', 1, false, 'y');
+        // 時段: 平滑面積圖
+        createChart('hourlyChart', '時段頻率', Array.from({length:24},(_,i)=>i+'時'), hAvg, 'rgba(255, 152, 0, 0.9)', 'line', 2, true);
     }
 
-    function createChart(id, label, labels, data, color, type, decimals) {
+    function createChart(id, label, labels, data, color, type, decimals, isArea = false, axis = 'x') {
         const ctx = document.getElementById(id).getContext('2d');
         if (charts[id]) charts[id].destroy();
-        
+
         charts[id] = new Chart(ctx, {
             type: type,
             data: {
@@ -194,46 +220,55 @@
                 datasets: [{
                     label: label,
                     data: data,
-                    backgroundColor: color,
-                    borderColor: color.replace('0.8', '1'),
-                    borderWidth: 2,
-                    tension: 0.3,
-                    fill: type === 'line'
+                    backgroundColor: isArea ? getGradient(ctx, color) : color,
+                    borderColor: color.replace('0.9', '1'),
+                    borderWidth: 3,
+                    borderRadius: 8, // 圓角增加立體感
+                    tension: 0.4,
+                    fill: isArea,
+                    indexAxis: axis, // 用於切換橫向長條圖
+                    borderSkipped: false,
+                    shadowBlur: 10,
+                    shadowColor: 'rgba(0,0,0,0.1)',
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                layout: {
-                    padding: {
-                        top: 40 // 增加頂部留白，防止標籤被遮蓋
-                    }
-                },
+                layout: { padding: { top: 40, left: 10, right: 20, bottom: 10 } },
                 plugins: {
                     legend: { display: false },
                     datalabels: {
-                        display: true, // 強制顯示數據
                         anchor: 'end',
-                        align: 'top',
-                        offset: 5, // 標籤與點位間距
-                        color: '#1e293b',
-                        font: { weight: 'bold', size: 12 },
+                        align: axis === 'x' ? 'top' : 'right',
+                        color: '#334155',
+                        font: { weight: '800', size: 13 },
                         formatter: (val) => val == 0 ? '' : (decimals === 0 ? Math.round(val) : parseFloat(val).toFixed(decimals))
                     }
                 },
-                scales: { 
+                scales: {
                     y: { 
-                        display: true, // 修正：確保左側數據 Y 軸顯示
+                        display: true, 
                         beginAtZero: true, 
-                        grid: { color: '#f1f5f9' },
-                        ticks: { 
-                            color: '#64748b',
-                            font: { size: 11 }
-                        }
+                        grid: { color: '#f1f5f9', drawBorder: false },
+                        ticks: { color: '#94a3b8', font: { size: 12 } }
                     },
-                    x: { grid: { display: false }, ticks: { color: '#64748b' } }
+                    x: { 
+                        grid: { display: false }, 
+                        ticks: { color: '#94a3b8', font: { size: 12 } } 
+                    }
                 }
-            }
+            },
+            plugins: [{
+                // 自定義陰影插件，模擬立體感
+                beforeDraw: (chart) => {
+                    const { ctx } = chart;
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
+                    ctx.shadowBlur = 10;
+                    ctx.shadowOffsetX = 4;
+                    ctx.shadowOffsetY = 4;
+                }
+            }]
         });
     }
 
