@@ -3,23 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Logistics Intelligence Dashboard v26.0</title>
+    <title>Logistics Intelligence Dashboard v27.0</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <style>
         :root {
-            --primary: #2196F3; --secondary: #673AB7; --success: #4CAF50; --bg: #f0f4f8;
+            --primary: #2196F3; --secondary: #673AB7; --success: #4CAF50; --bg: #f4f7fa;
             --white: #ffffff; --text: #0f172a; --border: #cbd5e1; --accent: #1e293b;
         }
         body { font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--text); }
         .container { max-width: 1400px; margin: 0 auto; width: 100%; }
         
-        /* 頂部控制 */
         .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .btn-icon { background: var(--white); border: 2px solid var(--border); border-radius: 8px; padding: 8px 12px; cursor: pointer; font-size: 1.2rem; }
 
-        /* 設定面板 */
         #settings-panel {
             position: fixed; top: 0; right: -450px; width: 400px; height: 100%; background: var(--white);
             box-shadow: -5px 0 20px rgba(0,0,0,0.1); z-index: 2000; transition: 0.4s; padding: 30px; overflow-y: auto;
@@ -28,7 +26,6 @@
         .set-item { margin-bottom: 15px; display: flex; flex-direction: column; gap: 5px; }
         .set-item label { font-weight: bold; font-size: 0.85rem; color: #64748b; }
 
-        /* 篩選器：已去除 Default View 選項 */
         .filter-card { 
             background: var(--white); padding: 30px; border-radius: 20px; 
             box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-end;
@@ -39,28 +36,21 @@
         input { padding: 15px; border: 3px solid #e2e8f0; border-radius: 12px; font-size: 1.1rem; font-weight: 900; background-color: #f8fafc; }
         .btn-run { background: var(--accent); color: white; border: none; border-radius: 15px; cursor: pointer; font-weight: 900; font-size: 1.4rem; height: 65px; width: 150px; }
 
-        /* 圖表卡片 */
         .stats-grid { display: flex; flex-direction: column; gap: 40px; }
-        .chart-card { background: var(--white); padding: 30px; border-radius: 25px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); cursor: pointer; }
-        .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 3px solid #f1f5f9; padding-bottom: 10px; flex-wrap: wrap; gap: 10px; }
+        .chart-card { background: var(--white); padding: 30px; border-radius: 25px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); cursor: pointer; border: 2px solid transparent; }
+        .chart-card:hover { border-color: var(--primary); }
+        .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 3px solid #f1f5f9; padding-bottom: 10px; }
         .chart-title { font-weight: 900; font-size: 1.6rem; }
-        
-        /* 圖表右側獨立選擇器 */
-        .chart-type-selector { padding: 8px; border-radius: 8px; border: 2px solid var(--border); font-weight: bold; font-size: 0.9rem; background: #f8fafc; }
+        .chart-type-selector { padding: 8px; border-radius: 8px; border: 2px solid var(--border); font-weight: bold; }
 
-        /* 2欄3行分析 + 分析總結區塊 */
-        .analysis-box { 
-            margin-top: 20px; padding: 20px; background: #f8fafc; border-left: 8px solid var(--primary); border-radius: 12px;
-        }
+        .analysis-box { margin-top: 20px; padding: 20px; background: #f8fafc; border-left: 8px solid var(--primary); border-radius: 12px; }
         .stat-grid-mini { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .stat-line { display: flex; flex-direction: column; border-bottom: 1px dashed #eee; padding-bottom: 5px; }
         .stat-label { font-weight: bold; color: #64748b; font-size: 0.8rem; }
         .stat-num { font-weight: 900; color: var(--primary); font-size: 1rem; }
-        
-        /* 💡 數據分析總結 */
-        .insight-box { margin-top: 15px; padding: 12px; background: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px; font-size: 0.95rem; color: #92400e; line-height: 1.5; }
+        .insight-box { margin-top: 15px; padding: 12px; background: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px; font-size: 0.95rem; color: #92400e; line-height: 1.5; font-weight: bold; }
 
-        .chart-container { height: 500px; width: 100%; position: relative; padding-right: 50px; }
+        .chart-container { height: 550px; width: 100%; position: relative; padding-right: 50px; }
         #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(15, 23, 42, 0.9); color: white; padding: 12px 30px; border-radius: 30px; font-weight: bold; z-index: 3000; display: none; }
     </style>
 </head>
@@ -68,70 +58,69 @@
 
     <div id="loading" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); display:none; flex-direction:column; align-items:center; justify-content:center; z-index:5000;">
         <div style="border:8px solid #f3f3f3; border-top:8px solid var(--primary); border-radius:50%; width:60px; height:60px; animation:spin 1s linear infinite;"></div>
-        <h2 style="margin-top:20px; font-weight:900;">Processing Data...</h2>
+        <h2 id="load-msg" style="margin-top:20px; font-weight:900;">數據分析中...</h2>
     </div>
     <div id="toast">✅ Image Copied!</div>
 
     <div id="settings-panel">
-        <div class="settings-header"><h3>⚙️ Advanced Settings</h3><button onclick="toggleSettings()" style="border:none; background:none; font-size:1.5rem; cursor:pointer;">&times;</button></div>
-        <div class="set-item"><label>🔢 Decimal Precision</label><input type="number" id="set-decimals" class="set-input" value="1"></div>
-        <div class="set-item"><label>🖼️ Copy Border Color</label><input type="color" id="set-border-color" class="set-input" value="#000000"></div>
-        <div class="set-item"><label>🖌️ Theme Color</label><input type="color" id="set-theme-color" class="set-input" value="#2196F3"></div>
-        <div class="set-item"><label>⏱️ Toast Time (sec)</label><input type="number" id="set-toast-time" class="set-input" value="1"></div>
+        <div class="settings-header"><h3 id="set-header">⚙️ 高級設定</h3><button onclick="toggleSettings()" style="border:none; background:none; font-size:1.5rem; cursor:pointer;">&times;</button></div>
+        <div class="set-item"><label id="set-lbl-dec">🔢 小數顯示位數</label><input type="number" id="set-decimals" class="set-input" value="1"></div>
+        <div class="set-item"><label id="set-lbl-brd">🖼️ 複製圖片邊框顏色</label><input type="color" id="set-border-color" class="set-input" value="#000000"></div>
+        <div class="set-item"><label id="set-lbl-toast">⏱️ 訊息自動關閉(秒)</label><input type="number" id="set-toast-time" class="set-input" value="1"></div>
         <button class="btn-run" style="height:45px; font-size:1rem; margin-top:20px;" onclick="saveAndApply()">Save Settings</button>
     </div>
 
     <div class="container">
         <div class="top-bar">
-            <h1 style="font-weight: 900; font-size: 1.8rem; margin:0;">物流運籌數據分析 v26.0</h1>
+            <h1 id="main-title" style="font-weight: 900; font-size: 1.8rem; margin:0;">物流運籌大數據系統 v27.0</h1>
             <div class="control-group">
-                <select id="ui-lang" class="lang-select" onchange="generateReport()"><option value="zh">繁體中文</option><option value="en">English</option></select>
+                <select id="ui-lang" class="lang-select" onchange="changeLanguage()"><option value="zh">繁體中文</option><option value="en">English</option><option value="hi">हिन्दी</option></select>
                 <button class="btn-icon" onclick="toggleSettings()">⚙️</button>
             </div>
         </div>
 
         <div class="filter-card">
-            <div class="filter-group"><label><span>📅</span> Start Date</label><input type="date" id="date-start"></div>
-            <div class="filter-group"><label><span>📅</span> End Date</label><input type="date" id="date-end"></div>
-            <div class="filter-group"><label><span>🔍</span> Material Search</label><input type="text" id="mat-filter" list="mat-list" placeholder="Material Name..."><datalist id="mat-list"></datalist></div>
-            <button class="btn-run" onclick="generateReport()">Update</button>
+            <div class="filter-group"><label id="lbl-start"><span>📅</span> 開始日期</label><input type="date" id="date-start"></div>
+            <div class="filter-group"><label id="lbl-end"><span>📅</span> 結束日期</label><input type="date" id="date-end"></div>
+            <div class="filter-group"><label id="lbl-mat"><span>🔍</span> 材料搜尋</label><input type="text" id="mat-filter" list="mat-list" placeholder="Material Name..."><datalist id="mat-list"></datalist></div>
+            <button id="btn-update" class="btn-run" onclick="generateReport()">Update</button>
         </div>
 
         <div class="stats-grid">
             <div class="chart-card" id="card-counts" onclick="copyAsImage(this)">
                 <div class="chart-header">
-                    <div class="chart-title">📦 每日貨櫃入廠次數</div>
+                    <div class="chart-title" id="tit-counts">📦 每日貨櫃入廠次數</div>
                     <select class="chart-type-selector" id="sel-counts" onclick="event.stopPropagation()" onchange="generateReport()"></select>
                 </div>
                 <div class="chart-container"><canvas id="countsChart"></canvas></div>
-                <div class="analysis-box"><div id="box-counts" class="stat-grid-mini"></div><div class="insight-box" id="insight-counts"></div></div>
+                <div class="analysis-box"><div id="box-counts" class="stat-grid-mini"></div><div class="insight-box" id="ins-counts"></div></div>
             </div>
 
             <div class="chart-card" id="card-tons" onclick="copyAsImage(this)">
                 <div class="chart-header">
-                    <div class="chart-title">⚖️ 每日入廠總重量趨勢</div>
+                    <div class="chart-title" id="tit-tons">⚖️ 每日入廠總重量趨勢</div>
                     <select class="chart-type-selector" id="sel-tons" onclick="event.stopPropagation()" onchange="generateReport()"></select>
                 </div>
                 <div class="chart-container"><canvas id="tonsChart"></canvas></div>
-                <div class="analysis-box"><div id="box-tons" class="stat-grid-mini"></div><div class="insight-box" id="insight-tons"></div></div>
+                <div class="analysis-box"><div id="box-tons" class="stat-grid-mini"></div><div class="insight-box" id="ins-tons"></div></div>
             </div>
 
             <div class="chart-card" id="card-hours" onclick="copyAsImage(this)">
                 <div class="chart-header">
-                    <div class="chart-title">⏱️ 每日卸載貨櫃作業工時加總</div>
+                    <div class="chart-title" id="tit-hours">⏱️ 每日卸載貨櫃作業工時</div>
                     <select class="chart-type-selector" id="sel-hours" onclick="event.stopPropagation()" onchange="generateReport()"></select>
                 </div>
                 <div class="chart-container"><canvas id="hoursChart"></canvas></div>
-                <div class="analysis-box"><div id="box-hours" class="stat-grid-mini"></div><div class="insight-box" id="insight-hours"></div></div>
+                <div class="analysis-box"><div id="box-hours" class="stat-grid-mini"></div><div class="insight-box" id="ins-hours"></div></div>
             </div>
 
             <div class="chart-card" id="card-hourly" onclick="copyAsImage(this)">
                 <div class="chart-header">
-                    <div class="chart-title">🔥 24H 入廠貨物重量分佈</div>
+                    <div class="chart-title" id="tit-hourly">🔥 貨櫃入廠 24H 分佈分析</div>
                     <select class="chart-type-selector" id="sel-hourly" onclick="event.stopPropagation()" onchange="generateReport()"></select>
                 </div>
                 <div class="chart-container"><canvas id="hourlyChart"></canvas></div>
-                <div class="analysis-box"><div id="box-hourly" class="stat-grid-mini"></div><div class="insight-box" id="insight-hourly"></div></div>
+                <div class="analysis-box"><div id="box-hourly" class="stat-grid-mini"></div><div class="insight-box" id="ins-hourly"></div></div>
             </div>
         </div>
     </div>
@@ -140,9 +129,13 @@
     Chart.register(ChartDataLabels);
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxX-XRuXqIB7JJopFGYaHtiAk6kZfe19bFihOd7HCxrA-ffKQGXDoIfJwwPYFLZER8c/exec";
     let rawData = [], charts = {};
-    const chartOptions = [
-        {v:'bar', n:'長條圖 (Bar)'}, {v:'line', n:'趨勢圖 (Trend Line)'}, {v:'stepped-line', n:'階梯圖'}, {v:'accumulate-line', n:'累積圖'}
-    ];
+    
+    // --- 擴充翻譯字典與圖表類型名稱 ---
+    const i18n = {
+        zh: { title: "物流運籌大數據系統", start: "開始日期", end: "結束日期", mat: "材料搜尋", update: "更新", cT: "📦 每日貨櫃入廠次數", wT: "⚖️ 每日入廠總重量趨勢", hT: "⏱️ 每日卸載貨櫃作業工時", aT: "🔥 貨櫃入廠 24H 分佈分析", load: "分析中...", s1: "總入廠:", s2: "總重量:", s3: "總工時:", s4: "單車平均工時:", s5: "單車平均重量:", s6: "產能比:", bar: "長條圖", line: "趨勢圖", scatter: "散佈圖", bubble: "氣泡圖", radar: "雷達圖", timeline: "時間軸圖", stacked: "百分比堆疊圖" },
+        en: { title: "Logistics Intelligence Dashboard", start: "Start Date", end: "End Date", mat: "Material Search", update: "Update", cT: "📦 Daily Arrivals", wT: "⚖️ Weight Trend", hT: "⏱️ Unloading Hours", aT: "🔥 24H Arrival Pattern", load: "Analyzing...", s1: "Total Units:", s2: "Total Tons:", s3: "Total Hrs:", s4: "Avg Hr/Unit:", s5: "Avg Ton/Unit:", s6: "Efficiency:", bar: "Bar Chart", line: "Trend Line", scatter: "Scatter Plot", bubble: "Bubble Chart", radar: "Radar Chart", timeline: "Timeline Chart", stacked: "Stacked Bar" },
+        hi: { title: "रसद डेटा विश्लेषण प्रणाली", start: "शुरुआत तिथि", end: "अंतिम तिथि", mat: "सामग्री खोज", update: "अपडेट", cT: "📦 दैनिक आगमन", wT: "⚖️ वजन रुझान", hT: "⏱️ अनलोडिंग समय", aT: "🔥 24H आगमन पैटर्न", load: "विश्लेषण...", s1: "कुल इकाइयाँ:", s2: "कुल टन:", s3: "कुल घंटे:", s4: "औसत घंटे/इकाई:", s5: "औसत टन/इकाई:", s6: "कुशलता:", bar: "बार चार्ट", line: "ट्रेंड लाइन", scatter: "स्कैटर प्लॉट", bubble: "बबल चार्ट", radar: "रडार चार्ट", timeline: "टाइमलाइन", stacked: "स्टैक्ड बार" }
+    };
 
     window.onload = async () => {
         initSelectors(); loadSettings();
@@ -150,28 +143,52 @@
         document.getElementById('date-start').value = localStorage.getItem('last_start_date') || firstDay;
         document.getElementById('date-end').value = localStorage.getItem('last_end_date') || lastDay;
         try {
+            toggleLoading(true);
             const r = await fetch(`${GAS_URL}?action=loadRecords`);
             const res = await r.json();
             if (res.result === 'success') { rawData = res.data; initMatDatalist(); generateReport(); }
         } catch (e) { alert("Data Fetch Error"); }
+        toggleLoading(false);
     };
 
     
 
+    // --- 圖表類型渲染邏輯 ---
     function initSelectors() {
-        const selectors = document.querySelectorAll('.chart-type-selector');
-        selectors.forEach(s => { 
-            s.innerHTML = chartOptions.map(o => `<option value="${o.v}">${o.n}</option>`).join(''); 
-            const saved = localStorage.getItem('type_' + s.id);
-            if(saved) s.value = saved;
+        const lang = document.getElementById('ui-lang').value || 'zh';
+        const opt = [
+            {v:'bar', n: i18n[lang].bar}, {v:'line', n: i18n[lang].line}, {v:'scatter', n: i18n[lang].scatter}, 
+            {v:'bubble', n: i18n[lang].bubble}, {v:'radar', n: i18n[lang].radar}, {v:'timeline', n: i18n[lang].timeline}, {v:'stacked', n: i18n[lang].stacked}
+        ];
+        document.querySelectorAll('.chart-type-selector').forEach(s => {
+            const current = s.value;
+            s.innerHTML = opt.map(o => `<option value="${o.v}">${o.n}</option>`).join('');
+            if(current) s.value = current;
+            else s.value = s.id === 'sel-tons' ? 'line' : (s.id === 'sel-hourly' ? 'radar' : 'bar');
         });
+    }
+
+    function changeLanguage() {
+        const l = document.getElementById('ui-lang').value;
+        document.getElementById('main-title').innerText = i18n[l].title;
+        document.getElementById('lbl-start').innerHTML = `<span>📅</span> ${i18n[l].start}`;
+        document.getElementById('lbl-end').innerHTML = `<span>📅</span> ${i18n[l].end}`;
+        document.getElementById('lbl-mat').innerHTML = `<span>🔍</span> ${i18n[l].mat}`;
+        document.getElementById('btn-update').innerText = i18n[l].update;
+        document.getElementById('tit-counts').innerText = i18n[l].cT;
+        document.getElementById('tit-tons').innerText = i18n[l].wT;
+        document.getElementById('tit-hours').innerText = i18n[l].hT;
+        document.getElementById('tit-hourly').innerText = i18n[l].aT;
+        document.getElementById('load-msg').innerText = i18n[l].load;
+        initSelectors(); // 重新載入圖表選單語言
+        generateReport(); // 重新渲染分析文字
     }
 
     function generateReport() {
         const sV = document.getElementById('date-start').value, eV = document.getElementById('date-end').value, filter = document.getElementById('mat-filter').value;
         localStorage.setItem('last_start_date', sV); localStorage.setItem('last_end_date', eV);
         const start = new Date(sV), end = new Date(eV);
-        let dailyData = {}, hourlyWeight = Array(24).fill(0), daysCount = 0;
+        let dailyData = {}, hourlyWeight = Array(24).fill(0), hourlyCounts = Array(24).fill(0), daysCount = 0;
 
         for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
             dailyData[d.toISOString().split('T')[0]] = { tons: 0, hours: 0, counts: 0 }; daysCount++;
@@ -184,70 +201,69 @@
                 if (dailyData[dKey] && (!filter || r.formNo === filter)) {
                     const tw = (parseFloat(r.concernSection) || 0) / 1000;
                     dailyData[dKey].counts++; dailyData[dKey].tons += tw; dailyData[dKey].hours += (parseFloat(r.totalTime || r['Total Time'] || 0)) / 60;
-                    hourlyWeight[dObj.getHours()] += tw;
+                    hourlyWeight[dObj.getHours()] += tw; hourlyCounts[dObj.getHours()] += 1;
                 }
             }
         });
-        renderCharts(Object.keys(dailyData).sort(), dailyData, hourlyWeight, daysCount);
+        renderCharts(Object.keys(dailyData).sort(), dailyData, hourlyWeight, hourlyCounts, daysCount);
     }
 
-    function renderCharts(labels, dayMap, hWeight, dCount) {
+    function renderCharts(labels, dayMap, hWeight, hCounts, dCount) {
         const dec = parseInt(localStorage.getItem('set_decimals')) || 1;
-        const theme = localStorage.getItem('set_theme_color') || '#2196F3';
         const ctxO = { responsive: true, maintainAspectRatio: false, layout: { padding: { right: 50, top: 60 } }, plugins: { legend: { display: false }, datalabels: { display: true, anchor: 'end', align: 'top', font: { weight: '900', size: 18 }, formatter: v => v == 0 ? '' : parseFloat(v).toFixed(dec) } }, scales: { y: { beginAtZero: true } } };
 
-        updateChart('countsChart', labels, labels.map(l=>dayMap[l].counts), '#4CAF50', document.getElementById('sel-counts').value, ctxO);
-        updateChart('tonsChart', labels, labels.map(l=>dayMap[l].tons), theme, document.getElementById('sel-tons').value, ctxO);
-        updateChart('hoursChart', labels, labels.map(l=>dayMap[l].hours), '#FF9800', document.getElementById('sel-hours').value, ctxO);
-        updateChart('hourlyChart', Array.from({length:24},(_,i)=>i+'h'), hWeight.map(v=>v/dCount), '#9C27B0', document.getElementById('sel-hourly').value, ctxO);
+        updateChart('countsChart', labels, labels.map(l=>dayMap[l].counts), '#4CAF50', document.getElementById('sel-counts').value, ctxO, hCounts);
+        updateChart('tonsChart', labels, labels.map(l=>dayMap[l].tons), '#2196F3', document.getElementById('sel-tons').value, ctxO, hCounts);
+        updateChart('hoursChart', labels, labels.map(l=>dayMap[l].hours), '#FF9800', document.getElementById('sel-hours').value, ctxO, hCounts);
+        // 時段分析圖使用平均重量數據
+        updateChart('hourlyChart', Array.from({length:24},(_,i)=>i+'h'), hWeight.map(v=>v/dCount), '#9C27B0', document.getElementById('sel-hourly').value, ctxO, hCounts);
         
         doAnalysis(labels, dayMap, hWeight, dCount);
     }
 
-    // --- 強化分析與總結邏輯 ---
-    function doAnalysis(labels, dayMap, hWeight, dCount) {
-        const totalC = labels.reduce((a, k) => a + dayMap[k].counts, 0);
-        const totalT = labels.reduce((a, k) => a + dayMap[k].tons, 0);
-        const totalH = labels.reduce((a, k) => a + dayMap[k].hours, 0);
-        const ratio = totalT > 0 ? (totalH / totalT).toFixed(2) : 0;
+    // --- 圖表引擎升級 ---
+    function updateChart(id, labels, data, color, type, options, counts) {
+        const ctx = document.getElementById(id).getContext('2d'); if (charts[id]) charts[id].destroy();
+        let config = { type: type === 'stacked' ? 'bar' : type, data: { labels: labels, datasets: [{ data: data, backgroundColor: color, borderColor: color, borderWidth: 4 }] }, options: options };
         
-        const html = `<div class="stat-line"><span class="stat-label">總入廠:</span><span class="stat-num">${totalC}車</span></div><div class="stat-line"><span class="stat-label">平均工時:</span><span class="stat-num">${totalC>0?(totalH/totalC).toFixed(1):0}H/車</span></div><div class="stat-line"><span class="stat-label">總重量:</span><span class="stat-num">${totalT.toFixed(1)}T</span></div><div class="stat-line"><span class="stat-label">平均重量:</span><span class="stat-num">${totalC>0?(totalT/totalC).toFixed(1):0}T/車</span></div><div class="stat-line"><span class="stat-label">總工時:</span><span class="stat-num">${totalH.toFixed(1)}H</span></div><div class="stat-line"><span class="stat-label">產能比:</span><span class="stat-num">${ratio} H/T</span></div>`;
+        if(type === 'line') { config.data.datasets[0].tension = 0.4; config.data.datasets[0].fill = true; config.data.datasets[0].backgroundColor = color+'33'; }
+        if(type === 'scatter') { config.data.datasets[0].data = data.map((v, i) => ({x: i, y: v})); config.options.scales.x = { type: 'linear', ticks: { callback: v => labels[v] } }; }
+        if(type === 'bubble') { config.data.datasets[0].data = data.map((v, i) => ({x: i, y: v, r: Math.sqrt(v)*10})); }
+        if(type === 'radar') { config.options.scales = { r: { beginAtZero: true } }; config.data.datasets[0].fill = true; config.data.datasets[0].backgroundColor = color+'33'; }
+        if(type === 'stacked') { config.options.scales.x = { stacked: true }; config.options.scales.y = { stacked: true }; }
         
-        document.querySelectorAll('.stat-grid-mini').forEach(box => box.innerHTML = html);
-
-        // 智慧總結
-        const insight = ratio > 0.5 ? "⚠️ <b>總結：</b>目前每噸作業工時偏高，建議檢查卸貨人力分組或機械輔助效率。" : "✅ <b>總結：</b>作業效率良好，產能比維持在優質區間。";
-        document.querySelectorAll('.insight-box').forEach(box => box.innerHTML = insight);
+        charts[id] = new Chart(ctx, config);
     }
 
-    // --- 複製為圖片並加入邊框 ---
+    function doAnalysis(labels, dayMap, hWeight, dCount) {
+        const l = document.getElementById('ui-lang').value || 'zh';
+        const totalC = labels.reduce((a, k) => a + dayMap[k].counts, 0), totalT = labels.reduce((a, k) => a + dayMap[k].tons, 0), totalH = labels.reduce((a, k) => a + dayMap[k].hours, 0);
+        const ratio = totalT > 0 ? (totalH / totalT).toFixed(2) : 0;
+        
+        const html = `<div class="stat-line"><span class="stat-label">${i18n[l].s1}</span><span class="stat-num">${totalC}車</span></div><div class="stat-line"><span class="stat-label">${i18n[l].s4}</span><span class="stat-num">${totalC>0?(totalH/totalC).toFixed(1):0}H/車</span></div><div class="stat-line"><span class="stat-label">${i18n[l].s2}</span><span class="stat-num">${totalT.toFixed(1)}T</span></div><div class="stat-line"><span class="stat-label">${i18n[l].s5}</span><span class="stat-num">${totalC>0?(totalT/totalC).toFixed(1):0}T/車</span></div><div class="stat-line"><span class="stat-label">${i18n[l].s3}</span><span class="stat-num">${totalH.toFixed(1)}H</span></div><div class="stat-line"><span class="stat-label">${i18n[l].s6}</span><span class="stat-num">${ratio} H/T</span></div>`;
+        document.querySelectorAll('.stat-grid-mini').forEach(box => box.innerHTML = html);
+
+        const insZH = ratio > 0.5 ? "⚠️ <b>總結：</b>作業耗時過長。建議優化人力部署，或檢查卸貨區域是否阻塞。" : "✅ <b>總結：</b>作業效率優良。目前產能配比穩定，可維持現有流程。";
+        const insEN = ratio > 0.5 ? "⚠️ <b>Insight:</b> Labor time is high. Consider optimizing manpower or clearing unloading areas." : "✅ <b>Insight:</b> Efficiency is high. Current labor ratios are optimal.";
+        document.querySelectorAll('.insight-box').forEach(box => box.innerHTML = l==='zh'?insZH:(l==='en'?insEN:'⚠️ विश्लेषण उपलब्ध नहीं है'));
+    }
+
     async function copyAsImage(element) {
         const borderColor = localStorage.getItem('set_border_color') || '#000000';
-        element.style.border = `10px solid ${borderColor}`; // 加入邊框
-        
+        element.style.border = `15px solid ${borderColor}`;
         const canvas = await html2canvas(element, { scale: 2, backgroundColor: '#ffffff' });
-        element.style.border = "none"; // 恢復原狀
-
+        element.style.border = "2px solid transparent";
         canvas.toBlob(async b => {
-            await navigator.clipboard.write([new ClipboardItem({ "image/png": b })]);
+            await navigator.clipboard.write([new ClipboardItem({"image/png": b})]);
             const t = document.getElementById('toast'); t.style.display = 'block';
             setTimeout(() => t.style.display = 'none', (parseFloat(localStorage.getItem('set_toast_time')) || 1) * 1000);
         });
-    }
-
-    function updateChart(id, labels, data, color, type, options) {
-        const ctx = document.getElementById(id).getContext('2d'); if (charts[id]) charts[id].destroy();
-        let config = { type: 'bar', data: { labels: labels, datasets: [{ data: data, backgroundColor: color, borderColor: color, borderWidth: 4 }] }, options: options };
-        if(type === 'line' || type === 'stepped-line') { config.type = 'line'; config.data.datasets[0].tension = 0.4; config.data.datasets[0].fill = true; config.data.datasets[0].backgroundColor = color+'33'; if(type==='stepped-line') config.data.datasets[0].stepped = true; }
-        if(type === 'accumulate-line') { config.type = 'line'; let s = 0; config.data.datasets[0].data = data.map(v => s+=v); config.data.datasets[0].fill = true; config.data.datasets[0].backgroundColor = color+'33'; }
-        charts[id] = new Chart(ctx, config);
     }
 
     function toggleSettings() { document.getElementById('settings-panel').classList.toggle('active'); }
     function saveAndApply() {
         localStorage.setItem('set_decimals', document.getElementById('set-decimals').value);
         localStorage.setItem('set_border_color', document.getElementById('set-border-color').value);
-        localStorage.setItem('set_theme_color', document.getElementById('set-theme-color').value);
         localStorage.setItem('set_toast_time', document.getElementById('set-toast-time').value);
         document.querySelectorAll('.chart-type-selector').forEach(s => localStorage.setItem('type_'+s.id, s.value));
         toggleSettings(); generateReport();
@@ -255,9 +271,9 @@
     function loadSettings() {
         document.getElementById('set-decimals').value = localStorage.getItem('set_decimals') || 1;
         document.getElementById('set-border-color').value = localStorage.getItem('set_border_color') || '#000000';
-        document.getElementById('set-theme-color').value = localStorage.getItem('set_theme_color') || '#2196F3';
         document.getElementById('set-toast-time').value = localStorage.getItem('set_toast_time') || '1';
     }
+    function toggleLoading(show) { document.getElementById('loading').style.display = show ? 'flex' : 'none'; }
     function initMatDatalist() { const mats = new Set(); rawData.forEach(r => { if (r.formNo) mats.add(r.formNo); }); document.getElementById('mat-list').innerHTML = Array.from(mats).sort().map(m => `<option value="${m}">`).join(''); }
 </script>
 </body>
