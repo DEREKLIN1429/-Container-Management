@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Logistics Analysis Pro v11.0</title>
+    <title>Logistics Analysis Pro v12.0</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <style>
         :root {
-            --primary: #2196F3; --secondary: #673AB7; --success: #4CAF50; --warning: #FF9800; --bg: #f1f5f9;
+            --primary: #2196F3; --secondary: #673AB7; --success: #4CAF50; --warning: #FF9800; --bg: #f8fafc;
             --white: #ffffff; --text: #0f172a; --border: #cbd5e1;
         }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text); }
@@ -25,19 +25,18 @@
         .filter-group { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 250px; }
         .filter-group label { font-weight: 700; font-size: 0.85rem; color: #475569; }
         
-        select, input { padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 15px; outline: none; transition: border 0.3s; }
-        select:focus, input:focus { border-color: var(--primary); }
-        
+        select, input { padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 15px; outline: none; }
         .btn-run { background: #0f172a; color: white; border: none; padding: 0 40px; border-radius: 8px; cursor: pointer; font-weight: 700; height: 48px; transition: 0.2s; }
-        .btn-run:hover { background: #334155; transform: translateY(-1px); }
+        .btn-run:hover { background: #334155; }
 
-        /* 圖表網格佈局：修正為一個圖表佔據一個完整欄位 (一列一個) */
+        /* 圖表區域 */
         .stats-grid { display: flex; flex-direction: column; gap: 30px; }
         .chart-card { background: var(--white); padding: 30px; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid var(--border); }
         .chart-header { margin-bottom: 20px; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; }
         .chart-title { font-weight: 800; font-size: 1.2rem; color: #1e293b; display: flex; align-items: center; gap: 10px; }
         
-        .chart-container { height: 450px; width: 100%; position: relative; }
+        /* 增加圖表高度與留白，防止標籤被遮擋 */
+        .chart-container { height: 480px; width: 100%; position: relative; }
 
         #loading {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -49,12 +48,12 @@
 </head>
 <body>
 
-    <div id="loading"><div class="loader"></div><h3 style="margin-top:20px;">大數據分析中...</h3></div>
+    <div id="loading"><div class="loader"></div><h3 style="margin-top:20px;">大數據計算中...</h3></div>
 
     <div class="container">
         <div class="dashboard-header">
             <h1 style="margin:0;">貨櫃物流大數據報表中心</h1>
-            <p style="color: #64748b;">Daily Logistics & Material Tonnage Dashboard</p>
+            <p style="color: #64748b;">Daily Logistics & Analysis Hub</p>
         </div>
 
         <div class="filter-card">
@@ -71,33 +70,34 @@
                 <input list="mat-list" id="mat-filter" placeholder="請選擇或輸入 Material Name...">
                 <datalist id="mat-list"></datalist>
             </div>
-            <button class="btn-run" onclick="generateReport()">執行數據統計</button>
+            <button class="btn-run" onclick="generateReport()">執行統計</button>
         </div>
 
         <div class="stats-grid">
             <div class="chart-card">
-                <div class="chart-header"><div class="chart-title">🚛 每日入廠次數統計 (單位: 次)</div></div>
+                <div class="chart-header"><div class="chart-title">🚛 每日入廠次數統計 (次)</div></div>
                 <div class="chart-container"><canvas id="countsChart"></canvas></div>
             </div>
 
             <div class="chart-card">
-                <div class="chart-header"><div class="chart-title">⚖️ 每日入廠總重量趨勢 (單位: 噸)</div></div>
+                <div class="chart-header"><div class="chart-title">⚖️ 每日入廠總重量趨勢 (噸)</div></div>
                 <div class="chart-container"><canvas id="tonsChart"></canvas></div>
             </div>
 
             <div class="chart-card">
-                <div class="chart-header"><div class="chart-title">⏱️ 每日作業總工時 (單位: 小時)</div></div>
+                <div class="chart-header"><div class="chart-title">⏱️ 每日作業總工時 (小時)</div></div>
                 <div class="chart-container"><canvas id="hoursChart"></canvas></div>
             </div>
 
             <div class="chart-card">
-                <div class="chart-header"><div class="chart-title">🔥 24小時進場高峰分析 (平均頻率)</div></div>
+                <div class="chart-header"><div class="chart-title">🔥 24小時進場高峰分析 (平均)</div></div>
                 <div class="chart-container"><canvas id="hourlyChart"></canvas></div>
             </div>
         </div>
     </div>
 
 <script>
+    // 註冊 DataLabels
     Chart.register(ChartDataLabels);
 
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxX-XRuXqIB7JJopFGYaHtiAk6kZfe19bFihOd7HCxrA-ffKQGXDoIfJwwPYFLZER8c/exec";
@@ -120,7 +120,7 @@
                 initMatDatalist();
                 generateReport();
             }
-        } catch (e) { alert("無法載入雲端資料"); }
+        } catch (e) { alert("連線失敗"); }
         toggleLoading(false);
     };
 
@@ -132,7 +132,6 @@
     }
 
     
-
     function generateReport() {
         const start = new Date(document.getElementById('date-start').value);
         const end = new Date(document.getElementById('date-end').value);
@@ -178,14 +177,10 @@
         const tData = labels.map(l => dayMap[l].tons.toFixed(1));
         const hData = labels.map(l => dayMap[l].hours.toFixed(1));
 
-        // 圖表 A: 次數 (Bar)
         createChart('countsChart', '入廠次數', labels, cData, 'rgba(76, 175, 80, 0.8)', 'bar', 0);
-        // 圖表 B: 噸數 (Line)
         createChart('tonsChart', '入廠重量(噸)', labels, tData, 'rgba(33, 150, 243, 0.8)', 'line', 1);
-        // 圖表 C: 工時 (Bar)
         createChart('hoursChart', '作業工時(小時)', labels, hData, 'rgba(103, 58, 183, 0.8)', 'bar', 1);
-        // 圖表 D: 時段 (Line)
-        createChart('hourlyChart', '平均進場次數', Array.from({length:24},(_,i)=>i+'時'), hAvg, 'rgba(255, 152, 0, 0.8)', 'line', 2);
+        createChart('hourlyChart', '平均進場頻率', Array.from({length:24},(_,i)=>i+'時'), hAvg, 'rgba(255, 152, 0, 0.8)', 'line', 2);
     }
 
     function createChart(id, label, labels, data, color, type, decimals) {
@@ -209,19 +204,34 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                layout: {
+                    padding: {
+                        top: 40 // 增加頂部留白，防止標籤被遮蓋
+                    }
+                },
                 plugins: {
                     legend: { display: false },
                     datalabels: {
+                        display: true, // 強制顯示數據
                         anchor: 'end',
                         align: 'top',
-                        color: '#334155',
+                        offset: 5, // 標籤與點位間距
+                        color: '#1e293b',
                         font: { weight: 'bold', size: 12 },
                         formatter: (val) => val == 0 ? '' : (decimals === 0 ? Math.round(val) : parseFloat(val).toFixed(decimals))
                     }
                 },
                 scales: { 
-                    y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { display: false } },
-                    x: { grid: { display: false } }
+                    y: { 
+                        display: true, // 修正：確保左側數據 Y 軸顯示
+                        beginAtZero: true, 
+                        grid: { color: '#f1f5f9' },
+                        ticks: { 
+                            color: '#64748b',
+                            font: { size: 11 }
+                        }
+                    },
+                    x: { grid: { display: false }, ticks: { color: '#64748b' } }
                 }
             }
         });
