@@ -3,18 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Logistics Analysis Pro v15.0</title>
+    <title>Logistics Analysis Pro v16.0</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <style>
         :root {
-            --primary: #2196F3; --secondary: #673AB7; --success: #4CAF50; --bg: #f8fafc;
+            --primary: #2196F3; --secondary: #673AB7; --success: #4CAF50; --warning: #FF9800; --bg: #f0f4f8;
             --white: #ffffff; --text: #0f172a; --border: #cbd5e1;
         }
-        body { font-family: 'Microsoft JhengHei', sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--text); overflow-x: hidden; }
+        body { font-family: 'Microsoft JhengHei', sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--text); }
         .container { max-width: 1400px; margin: 0 auto; width: 100%; }
         
-        /* 篩選器優化 */
         .filter-card { 
             background: var(--white); padding: 20px; border-radius: 15px; 
             box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;
@@ -26,37 +25,36 @@
         
         .btn-run { background: #0f172a; color: white; border: none; padding: 0 30px; border-radius: 10px; cursor: pointer; font-weight: 900; font-size: 1.1rem; height: 48px; width: 100%; }
 
-        /* 圖表排列 */
-        .stats-grid { display: flex; flex-direction: column; gap: 20px; width: 100%; }
-        .chart-card { background: var(--white); padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box; }
+        .stats-grid { display: flex; flex-direction: column; gap: 30px; width: 100%; }
+        .chart-card { background: var(--white); padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box; }
         .chart-header { margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; }
-        .chart-title { font-weight: 900; font-size: 1.4rem; color: #1e293b; }
-        .mat-tag { font-size: 1rem; background: #e0f2fe; color: var(--primary); padding: 5px 15px; border-radius: 20px; font-weight: 900; border: 1px solid var(--primary); }
+        .chart-title { font-weight: 900; font-size: 1.6rem; color: #1e293b; }
         
-        /* 滿版高度設定 */
+        /* 分析說明區塊樣式 */
+        .analysis-box { 
+            margin-top: 20px; padding: 15px; background: #f8fafc; border-left: 5px solid var(--primary); 
+            border-radius: 8px; font-size: 1.1rem; line-height: 1.6; color: #334155;
+        }
+        .analysis-box b { color: #0f172a; }
+
         .chart-container { height: 450px; width: 100%; position: relative; }
 
-        /* 手機橫放優化 (Landscape Mode) */
         @media screen and (orientation: landscape) and (max-height: 600px) {
-            body { padding: 5px; }
-            .filter-card { padding: 10px; margin-bottom: 10px; }
-            .chart-card { padding: 15px; border-radius: 10px; }
-            .chart-container { height: 85vh; width: 95vw; }
-            .dashboard-header, .filter-group label { display: none; } /* 隱藏非必要元素以騰出空間 */
+            .chart-container { height: 85vh; }
+            .analysis-box { font-size: 0.9rem; padding: 10px; }
         }
 
         #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; }
         .loader { border: 6px solid #f3f3f3; border-top: 6px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-    <div id="loading"><div class="loader"></div><h2 style="margin-top:20px; font-weight:900;">數據讀取中...</h2></div>
+    <div id="loading"><div class="loader"></div><h2 style="margin-top:20px; font-weight:900;">數據分析中...</h2></div>
 
     <div class="container">
-        <div class="dashboard-header" style="text-align: center;">
-            <h1 style="font-weight: 900; margin-bottom: 10px;">物流運籌數據分析</h1>
+        <div class="dashboard-header" style="text-align: center; margin-bottom: 20px;">
+            <h1 style="font-weight: 900; font-size: 2.2rem; margin:0;">貨櫃物流數據深度分析報表</h1>
         </div>
 
         <div class="filter-card">
@@ -69,46 +67,38 @@
                 <input type="date" id="date-end">
             </div>
             <div class="filter-group">
-                <label>🔍 材料名稱搜尋</label>
-                <input list="mat-list" id="mat-filter" placeholder="輸入名稱篩選...">
+                <label>🔍 材料名稱</label>
+                <input list="mat-list" id="mat-filter" placeholder="篩選特定材料...">
                 <datalist id="mat-list"></datalist>
             </div>
             <div class="filter-group" style="min-width: 120px;">
-                <button class="btn-run" onclick="generateReport()">執行</button>
+                <button class="btn-run" onclick="generateReport()">更新數據</button>
             </div>
         </div>
 
         <div class="stats-grid">
             <div class="chart-card">
-                <div class="chart-header">
-                    <div class="chart-title">📦 每日入廠次數</div>
-                    <div class="mat-tag">全部</div>
-                </div>
+                <div class="chart-header"><div class="chart-title">📦 每日入廠次數</div></div>
                 <div class="chart-container"><canvas id="countsChart"></canvas></div>
+                <div id="analysis-counts" class="analysis-box">正在分析次數數據...</div>
             </div>
 
             <div class="chart-card">
-                <div class="chart-header">
-                    <div class="chart-title">📐 每日入廠重量 (噸)</div>
-                    <div class="mat-tag">全部</div>
-                </div>
+                <div class="chart-header"><div class="chart-title">⚖️ 每日入廠總重量趨勢 (噸)</div></div>
                 <div class="chart-container"><canvas id="tonsChart"></canvas></div>
+                <div id="analysis-tons" class="analysis-box">正在分析重量趨勢...</div>
             </div>
 
             <div class="chart-card">
-                <div class="chart-header">
-                    <div class="chart-title">⏳ 每日作業工時 (Hr)</div>
-                    <div class="mat-tag">全部</div>
-                </div>
+                <div class="chart-header"><div class="chart-title">⏱️ 每日卸載貨櫃作業工時加總 (Hr)</div></div>
                 <div class="chart-container"><canvas id="hoursChart"></canvas></div>
+                <div id="analysis-hours" class="analysis-box">正在分析工時效率...</div>
             </div>
 
             <div class="chart-card">
-                <div class="chart-header">
-                    <div class="chart-title">🕙 24H 流量分佈</div>
-                    <div class="mat-tag">全部</div>
-                </div>
+                <div class="chart-header"><div class="chart-title">🔥 貨櫃入廠 24H 平均流量分佈</div></div>
                 <div class="chart-container"><canvas id="hourlyChart"></canvas></div>
+                <div id="analysis-hourly" class="analysis-box">正在分析尖峰時段...</div>
             </div>
         </div>
     </div>
@@ -122,11 +112,11 @@
 
     window.onload = async () => {
         toggleLoading(true);
-        const end = new Date();
-        const start = new Date();
-        start.setDate(end.getDate() - 30);
-        document.getElementById('date-start').value = start.toISOString().split('T')[0];
-        document.getElementById('date-end').value = end.toISOString().split('T')[0];
+        // 修正：預設日期為「當月」(從本月 1 日到今日)
+        const now = new Date();
+        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+        document.getElementById('date-start').value = firstDay.toISOString().split('T')[0];
+        document.getElementById('date-end').value = now.toISOString().split('T')[0];
 
         try {
             const resp = await fetch(`${GAS_URL}?action=loadRecords`);
@@ -136,7 +126,7 @@
                 initMatDatalist();
                 generateReport();
             }
-        } catch (e) { alert("連線失敗"); }
+        } catch (e) { alert("無法載入雲端資料"); }
         toggleLoading(false);
     };
 
@@ -153,7 +143,6 @@
         const start = new Date(document.getElementById('date-start').value);
         const end = new Date(document.getElementById('date-end').value);
         const filter = document.getElementById('mat-filter').value;
-        document.querySelectorAll('.mat-tag').forEach(tag => tag.innerText = filter || "全部");
 
         let dailyData = {};
         let hourlySum = Array(24).fill(0);
@@ -176,16 +165,16 @@
             if (dailyData[dKey] && isMatch) {
                 dailyData[dKey].counts += 1;
                 hourlySum[dObj.getHours()] += 1;
-                // 重量 (噸)
                 dailyData[dKey].tons += (parseFloat(r.concernSection) || 0) / 1000;
-                // 工時：抓取 E 欄 (totalTime) 並除以 60
-                // 修正：檢查 r.totalTime 或 r['Total Time']
+                // 工時修正：明確除以 60
                 const rawTime = r.totalTime || r['Total Time'] || 0;
-                dailyData[dKey].hours += (parseFloat(rawTime) || 0) / 60;
+                dailyData[dailyData[dKey] ? dKey : ''].hours += (parseFloat(rawTime) || 0) / 60;
             }
         });
 
-        renderCharts(dailyData, hourlySum.map(v => (v / (daysCount || 1)).toFixed(2)));
+        const labels = Object.keys(dailyData).sort();
+        renderCharts(labels, dailyData, hourlySum, daysCount);
+        updateAnalysis(labels, dailyData, hourlySum, daysCount);
     }
 
     function parseDate(s) {
@@ -193,23 +182,40 @@
         return m ? new Date(m[3], m[2]-1, m[1], m[4], m[5]) : null;
     }
 
-    function renderCharts(dayMap, hAvg) {
-        const labels = Object.keys(dayMap).sort();
+    function renderCharts(labels, dayMap, hSum, dCount) {
         const cData = labels.map(l => dayMap[l].counts);
         const tData = labels.map(l => dayMap[l].tons.toFixed(1));
         const hData = labels.map(l => dayMap[l].hours.toFixed(1));
+        const avgH = hSum.map(v => (v / (dCount || 1)).toFixed(2));
 
-        // 提高各圖表的顏色對比與區分
         createChart('countsChart', '入廠次數', labels, cData, '#4CAF50', 'bar', 0);
         createChart('tonsChart', '重量(噸)', labels, tData, '#2196F3', 'line', 1, true);
-        createChart('hoursChart', '工時(Hr)', labels, hData, '#FF9800', 'bar', 1); // 改變工時圖顏色為橘色
-        createChart('hourlyChart', '時段頻率', Array.from({length:24},(_,i)=>i+'h'), hAvg, '#9C27B0', 'line', 2, true);
+        createChart('hoursChart', '作業工時(Hr)', labels, hData, '#FF9800', 'bar', 1);
+        createChart('hourlyChart', '平均流量', Array.from({length:24},(_,i)=>i+'h'), avgH, '#9C27B0', 'line', 2, true);
+    }
+
+    function updateAnalysis(labels, dayMap, hSum, dCount) {
+        // 次數分析
+        const totalCounts = labels.reduce((acc, l) => acc + dayMap[l].counts, 0);
+        const maxDay = labels.reduce((a, b) => dayMap[a].counts > dayMap[b].counts ? a : b);
+        document.getElementById('analysis-counts').innerHTML = `💡 <b>統計分析：</b>本區段總計入廠 <b>${totalCounts}</b> 次。單日最高紀錄出現在 <b>${maxDay}</b>，共入廠 <b>${dayMap[maxDay].counts}</b> 次。`;
+
+        // 重量分析
+        const totalTons = labels.reduce((acc, l) => acc + dayMap[l].tons, 0).toFixed(1);
+        document.getElementById('analysis-tons').innerHTML = `💡 <b>統計分析：</b>累積卸載重量達 <b>${totalTons}</b> 噸。日平均進貨量約為 <b>${(totalTons / dCount).toFixed(1)}</b> 噸。`;
+
+        // 工時分析
+        const totalHrs = labels.reduce((acc, l) => acc + dayMap[l].hours, 0).toFixed(1);
+        document.getElementById('analysis-hours').innerHTML = `💡 <b>統計分析：</b>總作業人力耗時 <b>${totalHrs}</b> 小時。平均每車次卸載耗時約 <b>${totalCounts > 0 ? ((totalHrs*60) / totalCounts).toFixed(0) : 0}</b> 分鐘。`;
+
+        // 時段分析
+        const peakHour = hSum.indexOf(Math.max(...hSum));
+        document.getElementById('analysis-hourly').innerHTML = `💡 <b>尖峰分析：</b>貨櫃進場高峰集中在 <b>${peakHour}:00 - ${peakHour + 1}:00</b>。建議此時段預留更多待命人力。`;
     }
 
     function createChart(id, label, labels, data, color, type, decimals, isArea = false) {
         const ctx = document.getElementById(id).getContext('2d');
         if (charts[id]) charts[id].destroy();
-
         charts[id] = new Chart(ctx, {
             type: type,
             data: {
@@ -217,10 +223,9 @@
                 datasets: [{
                     label: label,
                     data: data,
-                    backgroundColor: isArea ? color + '33' : color, // 背景顏色透明度處理
+                    backgroundColor: isArea ? color + '33' : color,
                     borderColor: color,
                     borderWidth: 3,
-                    borderRadius: 5,
                     tension: 0.4,
                     fill: isArea
                 }]
@@ -228,24 +233,16 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                layout: { padding: { top: 40, left: 10, right: 10, bottom: 10 } },
                 plugins: {
                     legend: { display: false },
                     datalabels: {
-                        display: true,
-                        anchor: 'end',
-                        align: 'top',
-                        color: '#1e293b',
+                        display: true, anchor: 'end', align: 'top', color: '#1e293b',
                         font: { weight: '900', size: 16 },
                         formatter: (val) => val == 0 ? '' : (decimals === 0 ? Math.round(val) : parseFloat(val).toFixed(decimals))
                     }
                 },
                 scales: {
-                    y: { 
-                        beginAtZero: true, 
-                        grid: { color: '#e2e8f0' },
-                        ticks: { font: { size: 14, weight: 'bold' } }
-                    },
+                    y: { beginAtZero: true, grid: { color: '#e2e8f0' }, ticks: { font: { size: 14, weight: 'bold' } } },
                     x: { ticks: { font: { size: 12, weight: 'bold' } } }
                 }
             }
