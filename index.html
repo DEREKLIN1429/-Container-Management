@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Logistics Analysis Pro v22.0</title>
+    <title>Logistics Analysis Pro v23.0</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
@@ -38,7 +38,6 @@
         .chart-header { margin-bottom: 20px; border-bottom: 3px solid #f1f5f9; padding-bottom: 15px; }
         .chart-title { font-weight: 900; font-size: 1.8rem; color: #1e293b; }
         
-        /* 強化數據分析區塊 */
         .analysis-box { 
             margin-top: 25px; padding: 25px; background: #f8fafc; border-left: 10px solid var(--primary); 
             border-radius: 12px; font-size: 1.2rem; line-height: 2; color: #334155; 
@@ -118,6 +117,13 @@
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxX-XRuXqIB7JJopFGYaHtiAk6kZfe19bFihOd7HCxrA-ffKQGXDoIfJwwPYFLZER8c/exec";
     let rawData = [];
     let charts = {};
+
+    // --- 翻譯字典 ---
+    const i18n = {
+        zh: { title: "物流運籌大數據分析系統", start: "開始日期", end: "結束日期", mat: "材料名稱篩選", update: "執行分析", cT: "📦 每日貨櫃入廠次數", wT: "⚖️ 每日入廠總重量趨勢 (噸)", hT: "⏱️ 每日卸載貨櫃作業工時加總 (Hr)", aT: "🔥 24H 入廠貨物重量分佈 (噸)", l1: "總入廠貨櫃量:", l2: "總卸載重量:", l3: "總累計工時:", l4: "平均單車卸載工時:", l5: "平均單車負載重量:", l6: "勞動產能比 (工時/噸):" },
+        en: { title: "Logistics Analysis Pro System", start: "Start Date", end: "End Date", mat: "Material Name Filter", update: "Run Analysis", cT: "📦 Daily Container Arrivals", wT: "⚖️ Daily Tonnage Trend (Tons)", hT: "⏱️ Total Daily Unloading Hours (Hr)", aT: "🔥 24H Cargo Weight Distribution (Tons)", l1: "Total Container Arrivals:", l2: "Total Weight:", l3: "Total Labor Hours:", l4: "Avg Hours per Container:", l5: "Avg Tons per Container:", l6: "Labor Efficiency (Hr/Ton):" },
+        hi: { title: "रसद रसद डेटा विश्लेषण प्रणाली", start: "शुरुआत तिथि", end: "अंतिम तिथि", mat: "सामग्री का नाम फ़िल्टर", update: "विश्लेषण", cT: "📦 दैनिक कंटेनर आगमन", wT: "⚖️ दैनिक वजन रुझान (टन)", hT: "⏱️ दैनिक अनलोडिंग समय (Hr)", aT: "🔥 24H माल का वजन वितरण (टन)", l1: "कुल कंटेनर आगमन:", l2: "कुल अनलोड वजन:", l3: "कुल काम के घंटे:", l4: "प्रति कंटेनर औसत घंटे:", l5: "प्रति कंटेनर औसत टन:", l6: "श्रम दक्षता (घंटे/टन):" }
+    };
     
     window.onload = async () => {
         toggleLoading(true);
@@ -140,6 +146,22 @@
         } catch (e) { alert("Data fetch failed"); }
         toggleLoading(false);
     };
+
+    // --- 修正：修復語言切換邏輯 ---
+    function changeLanguage() {
+        const l = document.getElementById('ui-lang').value;
+        document.getElementById('main-title').innerText = i18n[l].title;
+        document.getElementById('lbl-start').innerHTML = `<span>📅</span> ${i18n[l].start}`;
+        document.getElementById('lbl-end').innerHTML = `<span>📅</span> ${i18n[l].end}`;
+        document.getElementById('lbl-mat').innerHTML = `<span>🔍</span> ${i18n[l].mat}`;
+        document.getElementById('btn-update').innerText = i18n[l].update;
+        document.getElementById('tit-counts').innerText = i18n[l].cT;
+        document.getElementById('tit-tons').innerText = i18n[l].wT;
+        document.getElementById('tit-hours').innerText = i18n[l].hT;
+        document.getElementById('tit-hourly').innerText = i18n[l].aT;
+        
+        generateReport(); // 切換語言後重新生成報告以更新分析框文字
+    }
 
     
 
@@ -184,37 +206,33 @@
 
     function renderCharts(labels, dayMap, hWeight, dCount) {
         const ctxO = { responsive: true, maintainAspectRatio: false, layout: { padding: { right: 50, top: 60, left: 10, bottom: 10 } }, plugins: { legend: { display: false }, datalabels: { display: true, anchor: 'end', align: 'top', offset: 12, color: '#0f172a', font: { weight: '900', size: 18 } } }, scales: { y: { beginAtZero: true, grid: { color: '#e2e8f0' }, ticks: { font: { size: 16, weight: 'bold' } } }, x: { ticks: { font: { size: 13, weight: 'bold' } } } } };
-        
         createChart('countsChart', labels, [{ label: '入廠次數', data: labels.map(l=>dayMap[l].counts), color: '#4CAF50', type: 'bar' }], 0, ctxO);
         createChart('tonsChart', labels, [{ label: '入廠重量', data: labels.map(l=>dayMap[l].tons.toFixed(1)), color: '#2196F3', type: 'line', fill: true }], 1, ctxO);
-        
-        // 修正：去除折線圖，僅保留數據標籤與長條
         createChart('hoursChart', labels, [{ label: '工時 (Hr)', data: labels.map(l=>dayMap[l].hours.toFixed(1)), color: '#FF9800', type: 'bar' }], 1, ctxO);
-
         createChart('hourlyChart', Array.from({length:24},(_,i)=>i+'h'), [{ label: '平均重量', data: hWeight.map(v=>(v/dCount).toFixed(1)), color: '#9C27B0', type: 'line', fill: true }], 1, ctxO);
     }
 
+    // --- 修正：數據分析文字也支持多語言 ---
     function doDeepAnalysis(labels, dayMap, hWeight, dCount) {
+        const l = document.getElementById('ui-lang').value;
         const totalCounts = labels.reduce((acc, k) => acc + dayMap[k].counts, 0);
         const totalTons = labels.reduce((acc, k) => acc + dayMap[k].tons, 0);
         const totalHours = labels.reduce((acc, k) => acc + dayMap[k].hours, 0);
         
-        // 跨維度分析
         const avgHoursPerUnit = totalCounts > 0 ? (totalHours / totalCounts).toFixed(2) : 0;
         const avgTonsPerUnit = totalCounts > 0 ? (totalTons / totalCounts).toFixed(2) : 0;
         const laborEfficiency = totalTons > 0 ? (totalHours / totalTons).toFixed(2) : 0;
 
         const summaryHTML = `
-            <div class="stat-line"><span class="stat-label">總入廠貨櫃量:</span> <span class="stat-num">${totalCounts} 車次</span></div>
-            <div class="stat-line"><span class="stat-label">總卸載重量:</span> <span class="stat-num">${totalTons.toFixed(1)} 噸</span></div>
-            <div class="stat-line"><span class="stat-label">總累計工時:</span> <span class="stat-num">${totalHours.toFixed(1)} Hr</span></div>
+            <div class="stat-line"><span class="stat-label">${i18n[l].l1}</span> <span class="stat-num">${totalCounts}</span></div>
+            <div class="stat-line"><span class="stat-label">${i18n[l].l2}</span> <span class="stat-num">${totalTons.toFixed(1)} T</span></div>
+            <div class="stat-line"><span class="stat-label">${i18n[l].l3}</span> <span class="stat-num">${totalHours.toFixed(1)} Hr</span></div>
             <hr>
-            <div class="stat-line"><span class="stat-label">平均單車卸載工時:</span> <span class="stat-num">${avgHoursPerUnit} Hr / 車</span></div>
-            <div class="stat-line"><span class="stat-label">平均單車負載重量:</span> <span class="stat-num">${avgTonsPerUnit} 噸 / 車</span></div>
-            <div class="stat-line"><span class="stat-label">勞動產能比 (工時/噸):</span> <span class="stat-num">${laborEfficiency} Hr/Ton</span></div>
+            <div class="stat-line"><span class="stat-label">${i18n[l].l4}</span> <span class="stat-num">${avgHoursPerUnit} Hr / Unit</span></div>
+            <div class="stat-line"><span class="stat-label">${i18n[l].l5}</span> <span class="stat-num">${avgTonsPerUnit} T / Unit</span></div>
+            <div class="stat-line"><span class="stat-label">${i18n[l].l6}</span> <span class="stat-num">${laborEfficiency} Hr/T</span></div>
         `;
 
-        // 統一更新到所有分析框
         document.querySelectorAll('.analysis-box').forEach(box => box.innerHTML = summaryHTML);
     }
 
@@ -225,9 +243,9 @@
             canvas.toBlob(async (blob) => {
                 const item = new ClipboardItem({ "image/png": blob });
                 await navigator.clipboard.write([item]);
-                alert("📸 圖片已複製！ (Image Copied)");
+                alert("📸 Image Copied!");
             });
-        } catch (e) { alert("Copy Image Failed"); }
+        } catch (e) { alert("Copy Failed"); }
         toggleLoading(false);
     }
 
