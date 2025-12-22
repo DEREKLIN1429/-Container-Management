@@ -76,15 +76,15 @@
     <div class="container">
         <div class="top-bar">
             <h1 style="font-weight: 900; font-size: 1.6rem; margin:0;">物流分析報表 v35.0</h1>
-            <button class="btn-copy-tool" onclick="toggleSettings()">⚙️ 設定</button>
+            <button class="btn-copy-tool" onclick="toggleSettings()">⚙️ 設定面板</button>
         </div>
 
         <div class="filter-card">
             <div class="filter-group"><label>📅 開始日期</label><input type="date" id="date-start"></div>
             <div class="filter-group"><label>📅 結束日期</label><input type="date" id="date-end"></div>
             <div class="filter-group">
-                <label onclick="clearMatSearch()">🔍 物料關鍵字搜尋 (點我清除)</label>
-                <input type="text" id="mat-filter" list="mat-list-data" placeholder="搜尋物料...">
+                <label onclick="clearMatSearch()">🔍 物料關鍵字搜尋 (點此清除)</label>
+                <input type="text" id="mat-filter" list="mat-list-data" placeholder="輸入關鍵字...">
                 <datalist id="mat-list-data"></datalist>
             </div>
             <button class="btn-run" onclick="generateReport()">Update</button>
@@ -110,6 +110,7 @@
 
 <script>
     Chart.register(ChartDataLabels);
+    // 重要：請替換為你的 Apps Script 部署網址
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxX-XRuXqIB7JJopFGYaHtiAk6kZfe19bFihOd7HCxrA-ffKQGXDoIfJwwPYFLZER8c/exec";
     let rawData = [], charts = {};
     const chartConfigs = [
@@ -134,8 +135,13 @@
                 rawData = res.data; 
                 initMatDatalist();
                 generateReport(); 
+            } else {
+                alert("資料讀取失敗: " + res.error);
             }
-        } catch (e) { console.error(e); }
+        } catch (e) { 
+            console.error(e);
+            alert("無法連線至後端，請檢查 GAS 部署與權限。");
+        }
         toggleLoading(false);
     };
 
@@ -175,7 +181,6 @@
     }
 
     function generateReport() {
-        // 取得開始日期 (00:00:00) 與 結束日期 (23:59:59)
         const startStr = document.getElementById('date-start').value;
         const endStr = document.getElementById('date-end').value;
         if (!startStr || !endStr) return;
@@ -186,10 +191,8 @@
         endLimit.setHours(23, 59, 59, 999);
 
         const filterKeyword = document.getElementById('mat-filter').value.toLowerCase();
-        
         let dailyData = {}, matStatsAll = {}, hourlyFlow = Array(24).fill(0);
 
-        // 初始化日期範圍內的 dailyData
         for (let d = new Date(startLimit); d <= endLimit; d.setDate(d.getDate() + 1)) {
             dailyData[d.toISOString().split('T')[0]] = { tons: 0, hours: 0, counts: 0 };
         }
@@ -197,21 +200,16 @@
         rawData.forEach(r => {
             const m = r.startTime?.match(/(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})/);
             if (m) {
-                // 月份是從 0 開始，所以 m[2]-1
                 const dObj = new Date(m[3], m[2]-1, m[1], m[4], m[5]);
-                
-                // 檢查是否在日期範圍內
                 if (dObj >= startLimit && dObj <= endLimit) {
                     const dKey = dObj.toISOString().split('T')[0];
                     const matName = r.formNo || "未知物料";
                     const isMatch = !filterKeyword || matName.toLowerCase().includes(filterKeyword);
 
-                    // 柏拉圖統計 (排除搜尋框干擾，但受日期限制)
                     if (!matStatsAll[matName]) matStatsAll[matName] = { counts: 0, tons: 0 };
                     matStatsAll[matName].counts++;
                     matStatsAll[matName].tons += (parseFloat(r.concernSection) || 0) / 1000;
                     
-                    // 其他圖表統計 (受搜尋框與日期限制)
                     if (dailyData[dKey] && isMatch) {
                         dailyData[dKey].counts++; 
                         dailyData[dKey].tons += (parseFloat(r.concernSection) || 0) / 1000;
@@ -230,8 +228,6 @@
         const source = document.getElementById('source-0').value;
         const tonDec = parseInt(localStorage.getItem('set_ton_dec')) || 1;
         let items = Object.keys(matStats).map(name => ({ label: name, value: matStats[name][source] }));
-        
-        // 僅取最大的前 10 名，不帶入「其他」
         items.sort((a, b) => b.value - a.value);
         let finalItems = items.slice(0, 10);
         
@@ -260,8 +256,7 @@
                 plugins: { 
                     legend: { display: false },
                     datalabels: { 
-                        display: (ctx) => ctx.datasetIndex === 0, 
-                        anchor: 'end', align: 'top', 
+                        display: (ctx) => ctx.datasetIndex === 0, anchor: 'end', align: 'top', 
                         font: { size: 14, weight: 'bold' },
                         formatter: v => v.toFixed(source === 'tons' ? tonDec : 0)
                     } 
@@ -290,11 +285,7 @@
                 layout: { padding: { top: 45 } },
                 plugins: { 
                     legend: { display: false }, 
-                    datalabels: { 
-                        display: true, anchor: 'end', align: 'top', 
-                        font: { size: 14, weight: 'bold' },
-                        formatter: v => v > 0 ? v.toFixed(idx === 2 ? tonDec : 0) : '' 
-                    } 
+                    datalabels: { display: true, anchor: 'end', align: 'top', font: { size: 14, weight: 'bold' }, formatter: v => v > 0 ? v.toFixed(idx === 2 ? tonDec : 0) : '' } 
                 },
                 scales: idx === 4 && type === 'radar' ? {} : { y: { beginAtZero: true } }
             }
