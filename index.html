@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Logistics Intelligence Dashboard v34.0</title>
+    <title>Logistics Intelligence Dashboard v35.0</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
@@ -23,6 +23,8 @@
 
         .filter-card { background: var(--white); padding: 20px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 25px; }
         .filter-group { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 140px; }
+        .filter-group label { cursor: pointer; font-weight: 900; color: var(--accent); transition: 0.2s; }
+        .filter-group label:hover { color: var(--primary); }
         input { padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 1rem; width: 100%; box-sizing: border-box; }
         
         .btn-run { background: var(--accent); color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: 900; font-size: 1.1rem; height: 50px; width: 100%; }
@@ -55,41 +57,34 @@
 
     <div id="loading" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); display:none; flex-direction:column; align-items:center; justify-content:center; z-index:5000;">
         <div style="border:8px solid #f3f3f3; border-top:8px solid var(--primary); border-radius:50%; width:60px; height:60px; animation:spin 1s linear infinite;"></div>
-        <h2 style="margin-top:20px; font-weight:900;">數據同步中...</h2>
+        <h2 style="margin-top:20px; font-weight:900;">數據更新中...</h2>
     </div>
 
     <div id="toast-msg">✅ 圖片已複製到剪貼簿</div>
 
     <div id="settings-panel">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h3 style="margin:0;">⚙️ 系統進階設定</h3>
+            <h3 style="margin:0;">⚙️ 系統設定</h3>
             <button onclick="toggleSettings()" style="border:none; background:none; font-size:1.5rem; cursor:pointer;">&times;</button>
         </div>
-        <div class="set-item">
-            <label>⚖️ 噸數顯示小數位數</label>
-            <input type="number" id="set-ton-dec" value="1" min="0" max="4">
-        </div>
-        <div class="set-item">
-            <label>⏱️ 複製提示顯示秒數</label>
-            <input type="number" id="set-toast-sec" value="2" min="1">
-        </div>
-        <hr>
+        <div class="set-item"><label>⚖️ 噸數小數位數</label><input type="number" id="set-ton-dec" value="1" min="0"></div>
+        <div class="set-item"><label>⏱️ 提示顯示秒數</label><input type="number" id="set-toast-sec" value="2" min="1"></div>
         <div id="def-settings-list"></div>
         <button class="btn-run" style="margin-top:20px; font-size:1rem; height:45px;" onclick="saveSettings()">儲存設定</button>
     </div>
 
     <div class="container">
         <div class="top-bar">
-            <h1 style="font-weight: 900; font-size: 1.6rem; margin:0;">物流分析報表 v34.0</h1>
-            <button class="btn-copy-tool" onclick="toggleSettings()">⚙️ 設定面板</button>
+            <h1 style="font-weight: 900; font-size: 1.6rem; margin:0;">物流分析報表 v35.0</h1>
+            <button class="btn-copy-tool" onclick="toggleSettings()">⚙️ 設定</button>
         </div>
 
         <div class="filter-card">
             <div class="filter-group"><label>📅 開始日期</label><input type="date" id="date-start"></div>
             <div class="filter-group"><label>📅 結束日期</label><input type="date" id="date-end"></div>
             <div class="filter-group">
-                <label>🔍 物料關鍵字搜尋</label>
-                <input type="text" id="mat-filter" list="mat-list-data" placeholder="輸入物料關鍵字(不分大小寫)...">
+                <label onclick="clearMatSearch()">🔍 物料關鍵字搜尋 (點我清除)</label>
+                <input type="text" id="mat-filter" list="mat-list-data" placeholder="搜尋物料...">
                 <datalist id="mat-list-data"></datalist>
             </div>
             <button class="btn-run" onclick="generateReport()">Update</button>
@@ -101,8 +96,8 @@
                     <div class="chart-title">📊 柏拉圖：物料佔比分析 (Top 10)</div>
                     <div class="chart-controls">
                         <select id="source-0" class="chart-select" onchange="generateReport()">
-                            <option value="counts">物料入廠次數</option>
-                            <option value="tons">物料入廠噸數</option>
+                            <option value="counts">次數佔比</option>
+                            <option value="tons">噸數佔比</option>
                         </select>
                         <button class="btn-copy-tool" onclick="copyAsImage('card-0')">📷 複製</button>
                     </div>
@@ -164,11 +159,7 @@
     function saveSettings() {
         localStorage.setItem('set_ton_dec', document.getElementById('set-ton-dec').value);
         localStorage.setItem('set_toast_sec', document.getElementById('set-toast-sec').value);
-        chartConfigs.forEach(conf => {
-            const val = document.getElementById(`set-type-${conf.id}`).value;
-            localStorage.setItem(`def_type_${conf.id}`, val);
-            document.getElementById(`type-${conf.id}`).value = val;
-        });
+        chartConfigs.forEach(conf => localStorage.setItem(`def_type_${conf.id}`, document.getElementById(`set-type-${conf.id}`).value));
         toggleSettings();
         generateReport();
     }
@@ -178,32 +169,50 @@
         document.getElementById('mat-list-data').innerHTML = mats.map(m => `<option value="${m}">`).join('');
     }
 
+    function clearMatSearch() {
+        document.getElementById('mat-filter').value = '';
+        generateReport();
+    }
+
     function generateReport() {
-        const start = new Date(document.getElementById('date-start').value);
-        const end = new Date(document.getElementById('date-end').value);
+        // 取得開始日期 (00:00:00) 與 結束日期 (23:59:59)
+        const startStr = document.getElementById('date-start').value;
+        const endStr = document.getElementById('date-end').value;
+        if (!startStr || !endStr) return;
+
+        const startLimit = new Date(startStr);
+        startLimit.setHours(0, 0, 0, 0);
+        const endLimit = new Date(endStr);
+        endLimit.setHours(23, 59, 59, 999);
+
         const filterKeyword = document.getElementById('mat-filter').value.toLowerCase();
         
         let dailyData = {}, matStatsAll = {}, hourlyFlow = Array(24).fill(0);
 
-        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        // 初始化日期範圍內的 dailyData
+        for (let d = new Date(startLimit); d <= endLimit; d.setDate(d.getDate() + 1)) {
             dailyData[d.toISOString().split('T')[0]] = { tons: 0, hours: 0, counts: 0 };
         }
 
         rawData.forEach(r => {
             const m = r.startTime?.match(/(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})/);
             if (m) {
-                const dObj = new Date(m[3], m[2]-1, m[1], m[4], m[5]), dKey = dObj.toISOString().split('T')[0];
-                const matName = r.formNo || "未知物料";
-                const isMatch = !filterKeyword || matName.toLowerCase().includes(filterKeyword);
+                // 月份是從 0 開始，所以 m[2]-1
+                const dObj = new Date(m[3], m[2]-1, m[1], m[4], m[5]);
+                
+                // 檢查是否在日期範圍內
+                if (dObj >= startLimit && dObj <= endLimit) {
+                    const dKey = dObj.toISOString().split('T')[0];
+                    const matName = r.formNo || "未知物料";
+                    const isMatch = !filterKeyword || matName.toLowerCase().includes(filterKeyword);
 
-                // 柏拉圖始終抓取日期範圍內的所有數據 (不做關鍵字變動)
-                if (dailyData[dKey]) {
+                    // 柏拉圖統計 (排除搜尋框干擾，但受日期限制)
                     if (!matStatsAll[matName]) matStatsAll[matName] = { counts: 0, tons: 0 };
                     matStatsAll[matName].counts++;
                     matStatsAll[matName].tons += (parseFloat(r.concernSection) || 0) / 1000;
                     
-                    // 其他圖表則套用過濾器
-                    if (isMatch) {
+                    // 其他圖表統計 (受搜尋框與日期限制)
+                    if (dailyData[dKey] && isMatch) {
                         dailyData[dKey].counts++; 
                         dailyData[dKey].tons += (parseFloat(r.concernSection) || 0) / 1000;
                         dailyData[dKey].hours += parseFloat(r.totalTime || 0);
@@ -222,13 +231,9 @@
         const tonDec = parseInt(localStorage.getItem('set_ton_dec')) || 1;
         let items = Object.keys(matStats).map(name => ({ label: name, value: matStats[name][source] }));
         
-        // 排序並處理 Top 10 + 其他
+        // 僅取最大的前 10 名，不帶入「其他」
         items.sort((a, b) => b.value - a.value);
         let finalItems = items.slice(0, 10);
-        if (items.length > 10) {
-            const otherVal = items.slice(10).reduce((sum, i) => sum + i.value, 0);
-            finalItems.push({ label: "【其他原料】", value: otherVal });
-        }
         
         const total = finalItems.reduce((a, b) => a + b.value, 0);
         let acc = 0;
@@ -282,7 +287,7 @@
             data: { labels: finalLabels, datasets: [{ data: finalData, backgroundColor: color + '44', borderColor: color, borderWidth: 3, fill: type === 'area', stepped: type === 'stepped', tension: 0.3 }] },
             options: {
                 responsive: true, maintainAspectRatio: false,
-                layout: { padding: { top: 40 } },
+                layout: { padding: { top: 45 } },
                 plugins: { 
                     legend: { display: false }, 
                     datalabels: { 
@@ -311,18 +316,15 @@
 
     async function copyAsImage(cardId) {
         const el = document.getElementById(cardId);
-        const controls = el.querySelector('.chart-controls');
-        controls.style.visibility = 'hidden';
-        
+        const ctrl = el.querySelector('.chart-controls');
+        ctrl.style.visibility = 'hidden';
         const canvas = await html2canvas(el, { scale: 2, backgroundColor: '#ffffff' });
-        controls.style.visibility = 'visible';
-        
+        ctrl.style.visibility = 'visible';
         canvas.toBlob(async b => {
             await navigator.clipboard.write([new ClipboardItem({"image/png": b})]);
             const toast = document.getElementById('toast-msg');
-            const sec = (parseInt(localStorage.getItem('set_toast_sec')) || 2) * 1000;
             toast.style.display = 'block';
-            setTimeout(() => { toast.style.display = 'none'; }, sec);
+            setTimeout(() => { toast.style.display = 'none'; }, (parseInt(localStorage.getItem('set_toast_sec')) || 2) * 1000);
         });
     }
     
