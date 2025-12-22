@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>原管貨櫃管理報表 v2.4</title>
+    <title>原管貨櫃管理報表 v2.5</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
@@ -12,22 +12,17 @@
         body { font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--text); }
         .container { max-width: 1400px; margin: 0 auto; width: 100%; }
         .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
-        
         #settings-panel { position: fixed; top: 0; right: -450px; width: 380px; height: 100%; background: var(--white); box-shadow: -10px 0 30px rgba(0,0,0,0.1); z-index: 2000; transition: 0.4s; padding: 25px; overflow-y: auto; }
         #settings-panel.active { right: 0; }
         .set-item { margin-bottom: 20px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px; }
         .set-item label { display: block; font-weight: bold; font-size: 0.85rem; margin-bottom: 8px; color: #64748b; }
-        
         .filter-card { background: var(--white); padding: 25px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 25px; border: 1px solid var(--border); }
         .filter-group { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 140px; }
         input, select { padding: 12px; border: 2px solid #cbd5e1; border-radius: 12px; font-size: 1rem; width: 100%; box-sizing: border-box; }
-        
         .btn-run { background: var(--accent); color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: 900; font-size: 1.1rem; height: 55px; width: 100%; transition: 0.3s; }
         .chart-card { background: var(--white); padding: 25px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); margin-bottom: 35px; border: 1px solid var(--border); }
         .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #f8fafc; padding-bottom: 12px; }
-        .chart-title { font-weight: 900; font-size: 1.3rem; color: #0f172a; }
         .chart-container { height: 400px; width: 100%; position: relative; margin-bottom: 20px; }
-        
         .analysis-box { padding: 20px; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-left: 6px solid var(--primary); border-radius: 16px; }
         .stat-grid-mini { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
         .stat-num { font-weight: 900; color: var(--primary); font-size: 1.3rem; }
@@ -49,15 +44,15 @@
             <h3>⚙️ 系統進階設定</h3>
             <button onclick="toggleSettings()" style="border:none; background:none; font-size:1.8rem; cursor:pointer;">&times;</button>
         </div>
-        <div class="set-item"><label>🔢 全域小數位數</label><input type="number" id="set-ton-dec" min="0" max="4"></div>
-        <div class="set-item"><label>🎨 全域圖表顏色</label><input type="color" id="set-global-color" style="width:100%; height:40px; border-radius:8px;"></div>
+        <div class="set-item"><label>🔢 數據標籤小數位數</label><input type="number" id="set-ton-dec" min="0" max="4" value="1"></div>
+        <div class="set-item"><label>🎨 全域圖表主色調</label><input type="color" id="set-global-color" style="width:100%; height:40px; border-radius:8px;"></div>
         <div id="def-settings-list"></div>
-        <button class="btn-run" style="width:100%; margin-top:20px;" onclick="saveSettings()">儲存並套用</button>
+        <button class="btn-run" style="width:100%; margin-top:20px;" onclick="saveSettings()">儲存並更新報表</button>
     </div>
 
     <div class="container">
         <div class="top-bar">
-            <h1 id="main-title" style="font-weight: 900; font-size: 1.6rem; margin:0;">原管貨櫃管理報表 v2.4</h1>
+            <h1 id="main-title" style="font-weight: 900; font-size: 1.6rem; margin:0;">原管貨櫃管理報表 v2.5</h1>
             <div class="control-group">
                 <select id="ui-lang" onchange="changeLanguage()" style="padding:10px; border-radius:10px; font-weight:bold;">
                     <option value="zh">繁體中文</option>
@@ -99,8 +94,8 @@
     const PUB_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQjY5PdR1CTA2gcvbeIPSFYflT2WHKWxELGliEG8c-fcCm9KlpTBlTbUIMDTCH1SieAITuY02SS65ic/pub?gid=0&single=true&output=csv";
     
     const i18n = {
-        zh: { title: "原管貨櫃管理報表 v2.4", start: "起始日期", end: "結束日期", search: "物料搜尋 (清除)", update: "更新數據", pareto: "📊 柏拉圖：物料入廠佔比分析", cT: "📦 貨櫃入廠頻次趨勢", wT: "⚖️ 每日載重總量分析", hT: "⏱️ 單貨櫃作業效率統計(Min)", aT: "🔥 24H 貨櫃流量分佈", l1: "總入廠次數", l2: "平均效率", l3: "總重量", l4: "總工時" },
-        en: { title: "Container Report v2.4", start: "Start Date", end: "End Date", search: "Search (Clear)", update: "Update", pareto: "📊 Pareto Analysis", cT: "📦 Frequency Trend", wT: "⚖️ Daily Tonnage", hT: "⏱️ Efficiency (Min)", aT: "🔥 24H Flow", l1: "Total Arrivals", l2: "Avg Efficiency", l3: "Total Weight", l4: "Total Hours" }
+        zh: { title: "原管貨櫃管理報表 v2.5", start: "起始日期", end: "結束日期", search: "物料搜尋 (清除)", update: "更新數據", pareto: "📊 柏拉圖：物料入廠佔比分析", cT: "📦 貨櫃入廠頻次趨勢", wT: "⚖️ 每日載重總量分析", hT: "⏱️ 單貨櫃作業效率統計(Min)", aT: "🔥 24H 貨櫃流量分佈", l1: "總入廠次數", l2: "平均效率", l3: "總重量", l4: "總工時" },
+        en: { title: "Container Report v2.5", start: "Start Date", end: "End Date", search: "Search (Clear)", update: "Update", pareto: "📊 Pareto Analysis", cT: "📦 Frequency Trend", wT: "⚖️ Daily Tonnage", hT: "⏱️ Efficiency (Min)", aT: "🔥 24H Flow", l1: "Total Units", l2: "Avg Efficiency", l3: "Total Weight", l4: "Total Hours" }
     };
 
     let rawData = [], charts = {};
@@ -116,7 +111,8 @@
     };
 
     function loadSettingsFromStorage() {
-        document.getElementById('set-ton-dec').value = localStorage.getItem('set_ton_dec') || 1;
+        const dec = localStorage.getItem('set_ton_dec');
+        document.getElementById('set-ton-dec').value = (dec !== null) ? dec : 1;
         document.getElementById('set-global-color').value = localStorage.getItem('set_global_color') || '#2196F3';
     }
 
@@ -205,7 +201,7 @@
 
     function renderPareto(matStats) {
         const source = document.getElementById('source-0').value;
-        const tonDec = parseInt(localStorage.getItem('set_ton_dec')) || 1;
+        const tonDec = parseInt(localStorage.getItem('set_ton_dec') || 1);
         const globalColor = localStorage.getItem('set_global_color') || '#2196F3';
         let items = Object.keys(matStats).map(name => ({ label: name, value: matStats[name][source] }));
         items.sort((a, b) => b.value - a.value);
@@ -229,7 +225,7 @@
             },
             options: { 
                 responsive: true, maintainAspectRatio: false,
-                layout: { padding: { top: 90, right: 60, left: 10, bottom: 10 } },
+                layout: { padding: { top: 100, right: 60, left: 10, bottom: 10 } },
                 plugins: { datalabels: { display: (ctx) => ctx.datasetIndex === 0, anchor: 'end', align: 'top', font: { size: 18, weight: '900' }, clip: false, formatter: v => v.toFixed(source === 'tons' ? tonDec : 0) }, legend: { display: false } },
                 scales: { y: { beginAtZero: true }, y1: { position: 'right', max: 100, grid: { display: false } } }
             }
@@ -238,7 +234,7 @@
 
     function renderModule(idx, labels, dayMap, hFlow) {
         const type = document.getElementById(`type-${idx}`).value;
-        const tonDec = parseInt(localStorage.getItem('set_ton_dec')) || 1;
+        const tonDec = parseInt(localStorage.getItem('set_ton_dec') || 1);
         const globalColor = localStorage.getItem('set_global_color') || '#2196F3';
         const color = idx === 1 ? '#10b981' : idx === 2 ? globalColor : idx === 3 ? '#f59e0b' : '#8b5cf6';
         
@@ -253,12 +249,16 @@
             data: { labels: finalLabels, datasets: [{ data: finalData, backgroundColor: color + '44', borderColor: color, borderWidth: 4, fill: type === 'area' }] },
             options: {
                 responsive: true, maintainAspectRatio: false,
-                layout: { padding: { top: 95 } },
+                layout: { padding: { top: 100, bottom: 20, right: 40, left: 20 } },
                 plugins: { 
                     datalabels: { 
-                        display: type !== 'radar', anchor: 'end', align: 'top', clip: false, font: { size: 18, weight: '900' },
-                        // 修正：2號圖表 (重量) 強制整數顯示
-                        formatter: v => v > 0 ? (idx === 2 ? Math.round(v) : v.toFixed(tonDec)) : '' 
+                        display: true, anchor: 'end', align: 'top', clip: false, font: { size: 18, weight: '900' },
+                        formatter: v => {
+                            if (v <= 0) return '';
+                            // 修正：1 號 (頻次)、3 號 (工時) 強制整數；2 號依照設定
+                            if (idx === 1 || idx === 3) return Math.round(v);
+                            return v.toFixed(tonDec);
+                        }
                     }, legend: { display: false }
                 },
                 scales: type === 'radar' ? { r: { ticks: { display: false }, pointLabels: { font: { size: 24, weight: '900' } } } } : { y: { beginAtZero: true } }
@@ -268,7 +268,7 @@
     }
 
     function updateAnalysis(idx, labels, dayMap) {
-        const tonDec = parseInt(localStorage.getItem('set_ton_dec')) || 1;
+        const tonDec = parseInt(localStorage.getItem('set_ton_dec') || 1);
         const l = document.getElementById('ui-lang').value;
         const d = i18n[l] || i18n.en;
         const totalC = labels.reduce((a, k) => a + dayMap[k].counts, 0);
