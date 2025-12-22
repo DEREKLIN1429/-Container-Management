@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Logistics Intelligence Dashboard v33.0</title>
+    <title>Logistics Intelligence Dashboard v34.0</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
@@ -11,7 +11,6 @@
         :root { --primary: #2196F3; --success: #4CAF50; --bg: #f4f7fa; --white: #ffffff; --text: #0f172a; --border: #cbd5e1; --accent: #1e293b; }
         body { font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--text); }
         .container { max-width: 1400px; margin: 0 auto; width: 100%; }
-        
         .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         
         #settings-panel { 
@@ -19,7 +18,7 @@
             box-shadow: -5px 0 20px rgba(0,0,0,0.1); z-index: 2000; transition: 0.4s; padding: 25px; overflow-y: auto; 
         }
         #settings-panel.active { right: 0; }
-        .set-item { margin-bottom: 15px; }
+        .set-item { margin-bottom: 15px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; }
         .set-item label { display: block; font-weight: bold; font-size: 0.85rem; margin-bottom: 5px; color: #64748b; }
 
         .filter-card { background: var(--white); padding: 20px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 25px; }
@@ -28,23 +27,21 @@
         
         .btn-run { background: var(--accent); color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: 900; font-size: 1.1rem; height: 50px; width: 100%; }
 
-        .stats-grid { display: flex; flex-direction: column; gap: 30px; }
-        .chart-card { background: var(--white); padding: 20px; border-radius: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); position: relative; width: 100%; box-sizing: border-box; }
-        
+        .chart-card { background: var(--white); padding: 20px; border-radius: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); margin-bottom: 30px; position: relative; width: 100%; box-sizing: border-box; }
         .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; flex-wrap: wrap; gap: 10px; }
         .chart-title { font-weight: 900; font-size: 1.2rem; flex: 1; }
-        
         .chart-controls { display: flex; gap: 8px; align-items: center; }
-        .chart-select { padding: 6px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.8rem; font-weight: bold; background: #fff; cursor: pointer; }
+        .chart-select { padding: 6px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.8rem; font-weight: bold; background: #fff; }
         .btn-copy-tool { background: #f1f5f9; border: 1px solid var(--border); border-radius: 6px; padding: 6px 12px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
 
         .chart-container { height: 350px; width: 100%; position: relative; margin-bottom: 15px; }
-        
         .analysis-box { padding: 15px; background: #f8fafc; border-left: 5px solid var(--primary); border-radius: 10px; box-sizing: border-box; width: 100%; }
         .stat-grid-mini { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
         .stat-line { display: flex; flex-direction: column; border-bottom: 1px dashed #eee; padding-bottom: 5px; }
         .stat-label { font-weight: bold; color: #64748b; font-size: 0.75rem; }
         .stat-num { font-weight: 900; color: var(--primary); font-size: 1rem; }
+
+        #toast-msg { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 10px 25px; border-radius: 25px; z-index: 9999; display: none; }
 
         @media (min-width: 768px) {
             .chart-container { height: 450px; }
@@ -61,26 +58,38 @@
         <h2 style="margin-top:20px; font-weight:900;">數據同步中...</h2>
     </div>
 
+    <div id="toast-msg">✅ 圖片已複製到剪貼簿</div>
+
     <div id="settings-panel">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h3 style="margin:0;">⚙️ 預設圖表設定</h3>
+            <h3 style="margin:0;">⚙️ 系統進階設定</h3>
             <button onclick="toggleSettings()" style="border:none; background:none; font-size:1.5rem; cursor:pointer;">&times;</button>
         </div>
+        <div class="set-item">
+            <label>⚖️ 噸數顯示小數位數</label>
+            <input type="number" id="set-ton-dec" value="1" min="0" max="4">
+        </div>
+        <div class="set-item">
+            <label>⏱️ 複製提示顯示秒數</label>
+            <input type="number" id="set-toast-sec" value="2" min="1">
+        </div>
+        <hr>
         <div id="def-settings-list"></div>
-        <button class="btn-run" style="margin-top:20px; font-size:1rem; height:45px;" onclick="saveSettings()">儲存並更新</button>
+        <button class="btn-run" style="margin-top:20px; font-size:1rem; height:45px;" onclick="saveSettings()">儲存設定</button>
     </div>
 
     <div class="container">
         <div class="top-bar">
-            <h1 style="font-weight: 900; font-size: 1.6rem; margin:0;">物流分析報表 v33.0</h1>
-            <button class="btn-copy-tool" onclick="toggleSettings()">⚙️ 設定</button>
+            <h1 style="font-weight: 900; font-size: 1.6rem; margin:0;">物流分析報表 v34.0</h1>
+            <button class="btn-copy-tool" onclick="toggleSettings()">⚙️ 設定面板</button>
         </div>
 
         <div class="filter-card">
             <div class="filter-group"><label>📅 開始日期</label><input type="date" id="date-start"></div>
             <div class="filter-group"><label>📅 結束日期</label><input type="date" id="date-end"></div>
-            <div class="filter-group"><label>🔍 物料搜尋</label>
-                <input type="text" id="mat-filter" list="mat-list-data" placeholder="請輸入物料名稱...">
+            <div class="filter-group">
+                <label>🔍 物料關鍵字搜尋</label>
+                <input type="text" id="mat-filter" list="mat-list-data" placeholder="輸入物料關鍵字(不分大小寫)...">
                 <datalist id="mat-list-data"></datalist>
             </div>
             <button class="btn-run" onclick="generateReport()">Update</button>
@@ -89,7 +98,7 @@
         <div class="stats-grid">
             <div class="chart-card" id="card-0">
                 <div class="chart-header">
-                    <div class="chart-title">📊 柏拉圖：物料佔比分析</div>
+                    <div class="chart-title">📊 柏拉圖：物料佔比分析 (Top 10)</div>
                     <div class="chart-controls">
                         <select id="source-0" class="chart-select" onchange="generateReport()">
                             <option value="counts">物料入廠次數</option>
@@ -100,7 +109,6 @@
                 </div>
                 <div class="chart-container"><canvas id="canvas-0"></canvas></div>
             </div>
-
             <div id="dynamic-charts"></div>
         </div>
     </div>
@@ -117,6 +125,7 @@
     ];
 
     window.onload = async () => {
+        loadSettingsFromStorage();
         loadDefaultUI();
         const now = new Date();
         document.getElementById('date-start').value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
@@ -135,40 +144,26 @@
         toggleLoading(false);
     };
 
+    function loadSettingsFromStorage() {
+        document.getElementById('set-ton-dec').value = localStorage.getItem('set_ton_dec') || 1;
+        document.getElementById('set-toast-sec').value = localStorage.getItem('set_toast_sec') || 2;
+    }
+
     function loadDefaultUI() {
         let html = '', setHtml = '';
         const types = [ {v:'bar', n:'長條圖'}, {v:'line', n:'趨勢圖'}, {v:'area', n:'面積圖'}, {v:'stepped', n:'階梯圖'}, {v:'radar', n:'雷達圖'} ];
-        
         chartConfigs.forEach(conf => {
             const savedType = localStorage.getItem(`def_type_${conf.id}`) || (conf.id === 4 ? 'radar' : conf.id === 3 ? 'stepped' : 'bar');
-            html += `
-                <div class="chart-card" id="card-${conf.id}">
-                    <div class="chart-header">
-                        <div class="chart-title">${conf.name}</div>
-                        <div class="chart-controls">
-                            <select id="type-${conf.id}" class="chart-select" onchange="generateReport()">
-                                ${types.map(t => `<option value="${t.v}" ${t.v === savedType ? 'selected' : ''}>${t.n}</option>`).join('')}
-                            </select>
-                            <button class="btn-copy-tool" onclick="copyAsImage('card-${conf.id}')">📷 複製</button>
-                        </div>
-                    </div>
-                    <div class="chart-container"><canvas id="canvas-${conf.id}"></canvas></div>
-                    <div class="analysis-box"><div id="box-${conf.id}" class="stat-grid-mini"></div></div>
-                </div>`;
-            
-            setHtml += `
-                <div class="set-item">
-                    <label>${conf.name} 預設類型</label>
-                    <select id="set-type-${conf.id}" class="chart-select" style="width:100%">
-                        ${types.map(t => `<option value="${t.v}" ${t.v === savedType ? 'selected' : ''}>${t.n}</option>`).join('')}
-                    </select>
-                </div>`;
+            html += `<div class="chart-card" id="card-${conf.id}"><div class="chart-header"><div class="chart-title">${conf.name}</div><div class="chart-controls"><select id="type-${conf.id}" class="chart-select" onchange="generateReport()">${types.map(t => `<option value="${t.v}" ${t.v === savedType ? 'selected' : ''}>${t.n}</option>`).join('')}</select><button class="btn-copy-tool" onclick="copyAsImage('card-${conf.id}')">📷 複製</button></div></div><div class="chart-container"><canvas id="canvas-${conf.id}"></canvas></div><div class="analysis-box"><div id="box-${conf.id}" class="stat-grid-mini"></div></div></div>`;
+            setHtml += `<div class="set-item"><label>${conf.name} 預設</label><select id="set-type-${conf.id}" class="chart-select" style="width:100%">${types.map(t => `<option value="${t.v}" ${t.v === savedType ? 'selected' : ''}>${t.n}</option>`).join('')}</select></div>`;
         });
         document.getElementById('dynamic-charts').innerHTML = html;
         document.getElementById('def-settings-list').innerHTML = setHtml;
     }
 
     function saveSettings() {
+        localStorage.setItem('set_ton_dec', document.getElementById('set-ton-dec').value);
+        localStorage.setItem('set_toast_sec', document.getElementById('set-toast-sec').value);
         chartConfigs.forEach(conf => {
             const val = document.getElementById(`set-type-${conf.id}`).value;
             localStorage.setItem(`def_type_${conf.id}`, val);
@@ -186,12 +181,12 @@
     function generateReport() {
         const start = new Date(document.getElementById('date-start').value);
         const end = new Date(document.getElementById('date-end').value);
-        const filter = document.getElementById('mat-filter').value;
+        const filterKeyword = document.getElementById('mat-filter').value.toLowerCase();
         
-        let dailyData = {}, matStats = {}, hourlyFlow = Array(24).fill(0), days = 0;
+        let dailyData = {}, matStatsAll = {}, hourlyFlow = Array(24).fill(0);
 
         for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-            dailyData[d.toISOString().split('T')[0]] = { tons: 0, hours: 0, counts: 0 }; days++;
+            dailyData[d.toISOString().split('T')[0]] = { tons: 0, hours: 0, counts: 0 };
         }
 
         rawData.forEach(r => {
@@ -199,56 +194,72 @@
             if (m) {
                 const dObj = new Date(m[3], m[2]-1, m[1], m[4], m[5]), dKey = dObj.toISOString().split('T')[0];
                 const matName = r.formNo || "未知物料";
-                if (dailyData[dKey] && (!filter || matName === filter)) {
-                    const tw = (parseFloat(r.concernSection) || 0) / 1000;
-                    const th = parseFloat(r.totalTime || 0);
-                    
-                    dailyData[dKey].counts++; 
-                    dailyData[dKey].tons += tw;
-                    dailyData[dKey].hours += th;
-                    hourlyFlow[dObj.getHours()]++;
+                const isMatch = !filterKeyword || matName.toLowerCase().includes(filterKeyword);
 
-                    if (!matStats[matName]) matStats[matName] = { counts: 0, tons: 0 };
-                    matStats[matName].counts++;
-                    matStats[matName].tons += tw;
+                // 柏拉圖始終抓取日期範圍內的所有數據 (不做關鍵字變動)
+                if (dailyData[dKey]) {
+                    if (!matStatsAll[matName]) matStatsAll[matName] = { counts: 0, tons: 0 };
+                    matStatsAll[matName].counts++;
+                    matStatsAll[matName].tons += (parseFloat(r.concernSection) || 0) / 1000;
+                    
+                    // 其他圖表則套用過濾器
+                    if (isMatch) {
+                        dailyData[dKey].counts++; 
+                        dailyData[dKey].tons += (parseFloat(r.concernSection) || 0) / 1000;
+                        dailyData[dKey].hours += parseFloat(r.totalTime || 0);
+                        hourlyFlow[dObj.getHours()]++;
+                    }
                 }
             }
         });
 
-        renderPareto(matStats);
+        renderPareto(matStatsAll);
         chartConfigs.forEach(conf => renderModule(conf.id, Object.keys(dailyData).sort(), dailyData, hourlyFlow));
     }
 
     function renderPareto(matStats) {
         const source = document.getElementById('source-0').value;
+        const tonDec = parseInt(localStorage.getItem('set_ton_dec')) || 1;
         let items = Object.keys(matStats).map(name => ({ label: name, value: matStats[name][source] }));
-        items = items.sort((a, b) => b.value - a.value).slice(0, 15); // 只取前 15 名
         
-        const total = items.reduce((a, b) => a + b.value, 0);
+        // 排序並處理 Top 10 + 其他
+        items.sort((a, b) => b.value - a.value);
+        let finalItems = items.slice(0, 10);
+        if (items.length > 10) {
+            const otherVal = items.slice(10).reduce((sum, i) => sum + i.value, 0);
+            finalItems.push({ label: "【其他原料】", value: otherVal });
+        }
+        
+        const total = finalItems.reduce((a, b) => a + b.value, 0);
         let acc = 0;
-        const paretoLine = items.map(it => { acc += it.value; return (acc / total * 100); });
+        const paretoLine = finalItems.map(it => { acc += it.value; return (acc / total * 100); });
 
         const ctx = document.getElementById('canvas-0').getContext('2d');
         if (charts[0]) charts[0].destroy();
         charts[0] = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: items.map(i => i.label),
+                labels: finalItems.map(i => i.label),
                 datasets: [
-                    { label: '數值', data: items.map(i => i.value), backgroundColor: '#2196F3', yAxisID: 'y' },
-                    { label: '累計 %', data: paretoLine, type: 'line', borderColor: '#F44336', backgroundColor: '#F44336', yAxisID: 'y1', pointRadius: 4 }
+                    { label: '數值', data: finalItems.map(i => i.value), backgroundColor: '#2196F3', yAxisID: 'y' },
+                    { label: '累計 %', data: paretoLine, type: 'line', borderColor: '#F44336', backgroundColor: '#F44336', yAxisID: 'y1', pointRadius: 5 }
                 ]
             },
             options: { 
                 responsive: true, maintainAspectRatio: false,
-                layout: { padding: { top: 35, right: 15 } },
+                layout: { padding: { top: 40, right: 20 } },
                 scales: { 
-                    y: { beginAtZero: true, title: { display: true, text: '數值' } }, 
-                    y1: { position: 'right', max: 100, beginAtZero: true, grid: { display: false }, title: { display: true, text: '累計百分比 %' } } 
+                    y: { beginAtZero: true }, 
+                    y1: { position: 'right', max: 100, beginAtZero: true, grid: { display: false } } 
                 },
                 plugins: { 
                     legend: { display: false },
-                    datalabels: { display: (ctx) => ctx.datasetIndex === 0, anchor: 'end', align: 'top' } 
+                    datalabels: { 
+                        display: (ctx) => ctx.datasetIndex === 0, 
+                        anchor: 'end', align: 'top', 
+                        font: { size: 14, weight: 'bold' },
+                        formatter: v => v.toFixed(source === 'tons' ? tonDec : 0)
+                    } 
                 }
             }
         });
@@ -256,6 +267,7 @@
 
     function renderModule(idx, labels, dayMap, hFlow) {
         const type = document.getElementById(`type-${idx}`).value;
+        const tonDec = parseInt(localStorage.getItem('set_ton_dec')) || 1;
         const conf = chartConfigs.find(c => c.id === idx);
         const color = ['#4CAF50', '#2196F3', '#FF9800', '#9C27B0'][idx-1];
 
@@ -270,8 +282,15 @@
             data: { labels: finalLabels, datasets: [{ data: finalData, backgroundColor: color + '44', borderColor: color, borderWidth: 3, fill: type === 'area', stepped: type === 'stepped', tension: 0.3 }] },
             options: {
                 responsive: true, maintainAspectRatio: false,
-                layout: { padding: { top: 35 } },
-                plugins: { legend: { display: false }, datalabels: { display: true, anchor: 'end', align: 'top', formatter: v => v > 0 ? v.toFixed(idx === 2 ? 1 : 0) : '' } },
+                layout: { padding: { top: 40 } },
+                plugins: { 
+                    legend: { display: false }, 
+                    datalabels: { 
+                        display: true, anchor: 'end', align: 'top', 
+                        font: { size: 14, weight: 'bold' },
+                        formatter: v => v > 0 ? v.toFixed(idx === 2 ? tonDec : 0) : '' 
+                    } 
+                },
                 scales: idx === 4 && type === 'radar' ? {} : { y: { beginAtZero: true } }
             }
         });
@@ -279,24 +298,32 @@
     }
 
     function updateAnalysis(idx, labels, dayMap) {
+        const tonDec = parseInt(localStorage.getItem('set_ton_dec')) || 1;
         const totalC = labels.reduce((a, k) => a + dayMap[k].counts, 0);
         const totalT = labels.reduce((a, k) => a + dayMap[k].tons, 0);
         const totalH = labels.reduce((a, k) => a + dayMap[k].hours, 0);
         document.getElementById(`box-${idx}`).innerHTML = `
             <div class="stat-line"><span class="stat-label">總入廠次數</span><span class="stat-num">${totalC}</span></div>
             <div class="stat-line"><span class="stat-label">平均工時</span><span class="stat-num">${totalC>0?(totalH/totalC).toFixed(1):0}m</span></div>
-            <div class="stat-line"><span class="stat-label">總重量</span><span class="stat-num">${totalT.toFixed(1)}T</span></div>
+            <div class="stat-line"><span class="stat-label">總重量</span><span class="stat-num">${totalT.toFixed(tonDec)}T</span></div>
             <div class="stat-line"><span class="stat-label">作業總工時</span><span class="stat-num">${totalH.toFixed(0)}m</span></div>`;
     }
 
     async function copyAsImage(cardId) {
         const el = document.getElementById(cardId);
-        const btn = el.querySelector('.btn-copy-tool');
-        const sel = el.querySelector('.chart-select');
-        btn.style.visibility = 'hidden'; sel.style.visibility = 'hidden';
-        const canvas = await html2canvas(el, { scale: 2 });
-        btn.style.visibility = 'visible'; sel.style.visibility = 'visible';
-        canvas.toBlob(b => navigator.clipboard.write([new ClipboardItem({"image/png": b})]).then(() => alert("圖片已複製")));
+        const controls = el.querySelector('.chart-controls');
+        controls.style.visibility = 'hidden';
+        
+        const canvas = await html2canvas(el, { scale: 2, backgroundColor: '#ffffff' });
+        controls.style.visibility = 'visible';
+        
+        canvas.toBlob(async b => {
+            await navigator.clipboard.write([new ClipboardItem({"image/png": b})]);
+            const toast = document.getElementById('toast-msg');
+            const sec = (parseInt(localStorage.getItem('set_toast_sec')) || 2) * 1000;
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, sec);
+        });
     }
     
     function toggleSettings() { document.getElementById('settings-panel').classList.toggle('active'); }
