@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>原管貨櫃管理報表 v2.5</title>
+    <title>原管貨櫃管理報表 v2.6</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
@@ -20,8 +20,11 @@
         .filter-group { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 140px; }
         input, select { padding: 12px; border: 2px solid #cbd5e1; border-radius: 12px; font-size: 1rem; width: 100%; box-sizing: border-box; }
         .btn-run { background: var(--accent); color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: 900; font-size: 1.1rem; height: 55px; width: 100%; transition: 0.3s; }
-        .chart-card { background: var(--white); padding: 25px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); margin-bottom: 35px; border: 1px solid var(--border); }
+        .chart-card { background: var(--white); padding: 25px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); margin-bottom: 35px; border: 1px solid var(--border); position: relative; }
         .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #f8fafc; padding-bottom: 12px; }
+        .chart-controls { display: flex; gap: 8px; align-items: center; }
+        .chart-select { padding: 6px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.8rem; font-weight: bold; background: #fff; }
+        .btn-copy-tool { background: #f1f5f9; border: 1px solid var(--border); border-radius: 6px; padding: 6px 12px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
         .chart-container { height: 400px; width: 100%; position: relative; margin-bottom: 20px; }
         .analysis-box { padding: 20px; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-left: 6px solid var(--primary); border-radius: 16px; }
         .stat-grid-mini { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
@@ -47,12 +50,12 @@
         <div class="set-item"><label>🔢 數據標籤小數位數</label><input type="number" id="set-ton-dec" min="0" max="4" value="1"></div>
         <div class="set-item"><label>🎨 全域圖表主色調</label><input type="color" id="set-global-color" style="width:100%; height:40px; border-radius:8px;"></div>
         <div id="def-settings-list"></div>
-        <button class="btn-run" style="width:100%; margin-top:20px;" onclick="saveSettings()">儲存並更新報表</button>
+        <button class="btn-run" style="width:100%; margin-top:20px;" onclick="saveSettings()">儲存並更新</button>
     </div>
 
     <div class="container">
         <div class="top-bar">
-            <h1 id="main-title" style="font-weight: 900; font-size: 1.6rem; margin:0;">原管貨櫃管理報表 v2.5</h1>
+            <h1 id="main-title" style="font-weight: 900; font-size: 1.6rem; margin:0;">原管貨櫃管理報表 v2.6</h1>
             <div class="control-group">
                 <select id="ui-lang" onchange="changeLanguage()" style="padding:10px; border-radius:10px; font-weight:bold;">
                     <option value="zh">繁體中文</option>
@@ -76,11 +79,11 @@
                 <div class="chart-header">
                     <div class="chart-title" id="tit-0">📊 Pareto Analysis</div>
                     <div class="chart-controls">
-                        <select id="source-0" class="chart-select" onchange="generateReport()" style="padding:6px; border-radius:6px; font-weight:bold;">
+                        <select id="source-0" class="chart-select" onchange="generateReport()">
                             <option value="tons" id="opt-ton">噸數</option>
                             <option value="counts" id="opt-count">次數</option>
                         </select>
-                        <button onclick="copyAsImage('card-0')" style="padding:6px; border:1px solid #ddd; border-radius:6px; cursor:pointer;">📷</button>
+                        <button class="btn-copy-tool" onclick="copyAsImage('card-0')">📷</button>
                     </div>
                 </div>
                 <div class="chart-container"><canvas id="canvas-0"></canvas></div>
@@ -94,12 +97,29 @@
     const PUB_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQjY5PdR1CTA2gcvbeIPSFYflT2WHKWxELGliEG8c-fcCm9KlpTBlTbUIMDTCH1SieAITuY02SS65ic/pub?gid=0&single=true&output=csv";
     
     const i18n = {
-        zh: { title: "原管貨櫃管理報表 v2.5", start: "起始日期", end: "結束日期", search: "物料搜尋 (清除)", update: "更新數據", pareto: "📊 柏拉圖：物料入廠佔比分析", cT: "📦 貨櫃入廠頻次趨勢", wT: "⚖️ 每日載重總量分析", hT: "⏱️ 單貨櫃作業效率統計(Min)", aT: "🔥 24H 貨櫃流量分佈", l1: "總入廠次數", l2: "平均效率", l3: "總重量", l4: "總工時" },
-        en: { title: "Container Report v2.5", start: "Start Date", end: "End Date", search: "Search (Clear)", update: "Update", pareto: "📊 Pareto Analysis", cT: "📦 Frequency Trend", wT: "⚖️ Daily Tonnage", hT: "⏱️ Efficiency (Min)", aT: "🔥 24H Flow", l1: "Total Units", l2: "Avg Efficiency", l3: "Total Weight", l4: "Total Hours" }
+        zh: { title: "原管貨櫃管理報表 v2.6", start: "起始日期", end: "結束日期", search: "物料搜尋 (清除)", update: "更新數據", pareto: "📊 柏拉圖：物料入廠佔比分析", cT: "📦 貨櫃入廠頻次趨勢", wT: "⚖️ 每日載重總量分析", hT: "⏱️ 單貨櫃作業效率統計(Min)", aT: "🔥 24H 貨櫃流量分佈", l1: "總入廠次數", l2: "平均效率", l3: "總重量", l4: "總工時", copy: "✅ 圖片已複製" },
+        en: { title: "Container Report v2.6", start: "Start Date", end: "End Date", search: "Search (Clear)", update: "Update", pareto: "📊 Pareto Analysis", cT: "📦 Frequency Trend", wT: "⚖️ Daily Tonnage", hT: "⏱️ Efficiency (Min)", aT: "🔥 24H Flow", l1: "Total Units", l2: "Avg Efficiency", l3: "Total Weight", l4: "Total Hours", copy: "✅ Image Copied" },
+        hi: { title: "लॉजिस्टिक्स डैशबोर्ड v2.6", start: "शुरुआत तिथि", end: "अंतिम तिथि", search: "खोजें (साफ़ करें)", update: "अपडेट", pareto: "📊 पारेतो विश्लेषण", cT: "📦 आगमन आवृत्ति", wT: "⚖️ दैनिक कुल वजन", hT: "⏱️ कार्य कुशलता (मिनट)", aT: "🔥 24H प्रवाह", l1: "कुल आगमन", l2: "औसत कुशलता", l3: "कुल वजन", l4: "कुल घंटे", copy: "✅ कॉपी हो गया" }
     };
 
     let rawData = [], charts = {};
     const chartConfigs = [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }];
+
+    function get3DGradient(ctx, color) {
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, color);
+        gradient.addColorStop(1, adjustColor(color, -50));
+        return gradient;
+    }
+
+    function adjustColor(hex, amt) {
+        hex = hex.replace('#','');
+        let num = parseInt(hex, 16);
+        let r = Math.max(0, Math.min(255, (num >> 16) + amt));
+        let g = Math.max(0, Math.min(255, ((num >> 8) & 0x00FF) + amt));
+        let b = Math.max(0, Math.min(255, (num & 0x0000FF) + amt));
+        return "#" + (g | (b << 8) | (r << 16)).toString(16).padStart(6, '0');
+    }
 
     window.onload = async () => {
         loadSettingsFromStorage();
@@ -134,11 +154,11 @@
         const d = i18n[l] || i18n.en;
         const names = [d.cT, d.wT, d.hT, d.aT];
         let html = '', setHtml = '';
-        const types = [ {v:'bar', n:'3D Bar'}, {v:'line', n:'3D Line'}, {v:'area', n:'3D Area'}, {v:'radar', n:'Radar'} ];
+        const types = [ {v:'bar', n:'3D Bar'}, {v:'line', n:'3D Line'}, {v:'area', n:'3D Area'}, {v:'stepped', n:'Stepped'}, {v:'radar', n:'Radar'} ];
         
         chartConfigs.forEach((conf, idx) => {
             const savedType = localStorage.getItem(`def_type_${conf.id}`) || (conf.id === 2 ? 'area' : conf.id === 4 ? 'radar' : 'bar');
-            html += `<div class="chart-card" id="card-${conf.id}"><div class="chart-header"><div class="chart-title">${names[idx]}</div><div class="chart-controls"><select id="type-${conf.id}" class="chart-select" onchange="generateReport()">${types.map(t => `<option value="${t.v}" ${t.v === savedType ? 'selected' : ''}>${t.n}</option>`).join('')}</select></div></div><div class="chart-container"><canvas id="canvas-${conf.id}"></canvas></div><div class="analysis-box"><div id="box-${conf.id}" class="stat-grid-mini"></div></div></div>`;
+            html += `<div class="chart-card" id="card-${conf.id}"><div class="chart-header"><div class="chart-title">${names[idx]}</div><div class="chart-controls"><select id="type-${conf.id}" class="chart-select" onchange="generateReport()">${types.map(t => `<option value="${t.v}" ${t.v === savedType ? 'selected' : ''}>${t.n}</option>`).join('')}</select><button class="btn-copy-tool" onclick="copyAsImage('card-${conf.id}')">📷</button></div></div><div class="chart-container"><canvas id="canvas-${conf.id}"></canvas></div><div class="analysis-box"><div id="box-${conf.id}" class="stat-grid-mini"></div></div></div>`;
             setHtml += `<div class="set-item"><label>${names[idx]} 預設</label><select id="set-type-${conf.id}">${types.map(t => `<option value="${t.v}" ${t.v === savedType ? 'selected' : ''}>${t.n}</option>`).join('')}</select></div>`;
         });
         document.getElementById('dynamic-charts').innerHTML = html;
@@ -207,7 +227,8 @@
         items.sort((a, b) => b.value - a.value);
         let finalItems = items.slice(0, 10);
         
-        const ctx = document.getElementById('canvas-0').getContext('2d');
+        const ctxCanvas = document.getElementById('canvas-0');
+        const ctx = ctxCanvas.getContext('2d');
         if (charts[0]) charts[0].destroy();
         
         const total = finalItems.reduce((a, b) => a + b.value, 0);
@@ -219,14 +240,17 @@
             data: {
                 labels: finalItems.map(i => i.label),
                 datasets: [
-                    { data: finalItems.map(i => i.value), backgroundColor: globalColor, borderRadius: 8, yAxisID: 'y' },
+                    { data: finalItems.map(i => i.value), backgroundColor: get3DGradient(ctx, globalColor), borderRadius: 8, yAxisID: 'y' },
                     { data: paretoLine, type: 'line', borderColor: '#ef4444', borderWidth: 4, yAxisID: 'y1', clip: false }
                 ]
             },
             options: { 
                 responsive: true, maintainAspectRatio: false,
                 layout: { padding: { top: 100, right: 60, left: 10, bottom: 10 } },
-                plugins: { datalabels: { display: (ctx) => ctx.datasetIndex === 0, anchor: 'end', align: 'top', font: { size: 18, weight: '900' }, clip: false, formatter: v => v.toFixed(source === 'tons' ? tonDec : 0) }, legend: { display: false } },
+                plugins: { 
+                    datalabels: { display: (ctx) => ctx.datasetIndex === 0, anchor: 'end', align: 'top', font: { size: 18, weight: '900' }, clip: false, formatter: v => v.toFixed(source === 'tons' ? tonDec : 0) },
+                    legend: { display: false }
+                },
                 scales: { y: { beginAtZero: true }, y1: { position: 'right', max: 100, grid: { display: false } } }
             }
         });
@@ -238,7 +262,8 @@
         const globalColor = localStorage.getItem('set_global_color') || '#2196F3';
         const color = idx === 1 ? '#10b981' : idx === 2 ? globalColor : idx === 3 ? '#f59e0b' : '#8b5cf6';
         
-        const ctx = document.getElementById(`canvas-${idx}`).getContext('2d');
+        const ctxCanvas = document.getElementById(`canvas-${idx}`);
+        const ctx = ctxCanvas.getContext('2d');
         if (charts[idx]) charts[idx].destroy();
 
         let finalLabels = idx === 4 ? Array.from({length:24},(_,i)=>i+'h') : labels;
@@ -246,20 +271,22 @@
 
         charts[idx] = new Chart(ctx, {
             type: type === 'radar' ? 'radar' : (type === 'area' ? 'line' : type),
-            data: { labels: finalLabels, datasets: [{ data: finalData, backgroundColor: color + '44', borderColor: color, borderWidth: 4, fill: type === 'area' }] },
+            data: { labels: finalLabels, datasets: [{ data: finalData, backgroundColor: type==='bar' ? get3DGradient(ctx, color) : color + '44', borderColor: color, borderWidth: 4, fill: type === 'area', stepped: type === 'stepped', tension: 0.4, borderRadius: 10 }] },
             options: {
                 responsive: true, maintainAspectRatio: false,
-                layout: { padding: { top: 100, bottom: 20, right: 40, left: 20 } },
+                layout: { padding: { top: 100, bottom: 20, right: 40 } },
                 plugins: { 
                     datalabels: { 
                         display: true, anchor: 'end', align: 'top', clip: false, font: { size: 18, weight: '900' },
                         formatter: v => {
                             if (v <= 0) return '';
-                            // 修正：1 號 (頻次)、3 號 (工時) 強制整數；2 號依照設定
                             if (idx === 1 || idx === 3) return Math.round(v);
+                            // 重量圖 (idx 2) 顯示整數以防遮蓋，分析框仍維持小數
+                            if (idx === 2) return Math.round(v);
                             return v.toFixed(tonDec);
                         }
-                    }, legend: { display: false }
+                    },
+                    legend: { display: false }
                 },
                 scales: type === 'radar' ? { r: { ticks: { display: false }, pointLabels: { font: { size: 24, weight: '900' } } } } : { y: { beginAtZero: true } }
             }
@@ -291,10 +318,16 @@
         document.getElementById('mat-list-data').innerHTML = mats.map(m => `<option value="${m}">`).join('');
     }
     async function copyAsImage(id) {
-        const canvas = await html2canvas(document.getElementById(id), { scale: 2, backgroundColor: '#f0f2f5' });
-        canvas.toBlob(b => navigator.clipboard.write([new ClipboardItem({"image/png": b})]).then(() => {
-            const t = document.getElementById('toast-msg'); t.style.display = 'block'; setTimeout(() => t.style.display='none', 2000);
-        }));
+        const l = document.getElementById('ui-lang').value;
+        const el = document.getElementById(id);
+        const canvas = await html2canvas(el, { scale: 2, backgroundColor: '#f0f2f5' });
+        canvas.toBlob(async b => {
+            await navigator.clipboard.write([new ClipboardItem({"image/png": b})]);
+            const t = document.getElementById('toast-msg');
+            t.innerText = i18n[l].copy;
+            t.style.display = 'block';
+            setTimeout(() => t.style.display='none', 2000);
+        });
     }
 </script>
 </body>
