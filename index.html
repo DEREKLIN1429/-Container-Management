@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Logistics Intelligence Dashboard v32.0</title>
+    <title>Logistics Intelligence Dashboard v33.0</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
@@ -14,6 +14,14 @@
         
         .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         
+        #settings-panel { 
+            position: fixed; top: 0; right: -450px; width: 350px; height: 100%; background: var(--white); 
+            box-shadow: -5px 0 20px rgba(0,0,0,0.1); z-index: 2000; transition: 0.4s; padding: 25px; overflow-y: auto; 
+        }
+        #settings-panel.active { right: 0; }
+        .set-item { margin-bottom: 15px; }
+        .set-item label { display: block; font-weight: bold; font-size: 0.85rem; margin-bottom: 5px; color: #64748b; }
+
         .filter-card { background: var(--white); padding: 20px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 25px; }
         .filter-group { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 140px; }
         input { padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 1rem; width: 100%; box-sizing: border-box; }
@@ -21,23 +29,21 @@
         .btn-run { background: var(--accent); color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: 900; font-size: 1.1rem; height: 50px; width: 100%; }
 
         .stats-grid { display: flex; flex-direction: column; gap: 30px; }
-        .chart-card { background: var(--white); padding: 20px; border-radius: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); position: relative; width: 100%; box-sizing: border-box; overflow: hidden; }
+        .chart-card { background: var(--white); padding: 20px; border-radius: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); position: relative; width: 100%; box-sizing: border-box; }
         
         .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; flex-wrap: wrap; gap: 10px; }
         .chart-title { font-weight: 900; font-size: 1.2rem; flex: 1; }
         
-        .chart-controls { display: flex; gap: 5px; align-items: center; }
+        .chart-controls { display: flex; gap: 8px; align-items: center; }
         .chart-select { padding: 6px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.8rem; font-weight: bold; background: #fff; cursor: pointer; }
-        .btn-copy-tool { background: #eee; border: 1px solid #ccc; border-radius: 6px; padding: 5px 10px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
-        .btn-copy-tool:hover { background: #ddd; }
+        .btn-copy-tool { background: #f1f5f9; border: 1px solid var(--border); border-radius: 6px; padding: 6px 12px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
 
-        .chart-container { height: 350px; width: 100%; position: relative; margin-bottom: 10px; }
+        .chart-container { height: 350px; width: 100%; position: relative; margin-bottom: 15px; }
         
-        /* 資訊框優化：寬度限制在圖表內 */
         .analysis-box { padding: 15px; background: #f8fafc; border-left: 5px solid var(--primary); border-radius: 10px; box-sizing: border-box; width: 100%; }
-        .stat-grid-mini { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; width: 100%; }
-        .stat-line { display: flex; flex-direction: column; border-bottom: 1px dashed #eee; padding-bottom: 5px; overflow: hidden; }
-        .stat-label { font-weight: bold; color: #64748b; font-size: 0.75rem; white-space: nowrap; }
+        .stat-grid-mini { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .stat-line { display: flex; flex-direction: column; border-bottom: 1px dashed #eee; padding-bottom: 5px; }
+        .stat-label { font-weight: bold; color: #64748b; font-size: 0.75rem; }
         .stat-num { font-weight: 900; color: var(--primary); font-size: 1rem; }
 
         @media (min-width: 768px) {
@@ -52,30 +58,42 @@
 
     <div id="loading" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); display:none; flex-direction:column; align-items:center; justify-content:center; z-index:5000;">
         <div style="border:8px solid #f3f3f3; border-top:8px solid var(--primary); border-radius:50%; width:60px; height:60px; animation:spin 1s linear infinite;"></div>
-        <h2 style="margin-top:20px; font-weight:900;">數據分析中...</h2>
+        <h2 style="margin-top:20px; font-weight:900;">數據同步中...</h2>
+    </div>
+
+    <div id="settings-panel">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h3 style="margin:0;">⚙️ 預設圖表設定</h3>
+            <button onclick="toggleSettings()" style="border:none; background:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+        </div>
+        <div id="def-settings-list"></div>
+        <button class="btn-run" style="margin-top:20px; font-size:1rem; height:45px;" onclick="saveSettings()">儲存並更新</button>
     </div>
 
     <div class="container">
         <div class="top-bar">
-            <h1 style="font-weight: 900; font-size: 1.6rem; margin:0;">物流分析報表 v32.0</h1>
-            <div style="font-size: 0.8rem; color: #666;">系統單位：分鐘(Min) / 噸(T)</div>
+            <h1 style="font-weight: 900; font-size: 1.6rem; margin:0;">物流分析報表 v33.0</h1>
+            <button class="btn-copy-tool" onclick="toggleSettings()">⚙️ 設定</button>
         </div>
 
         <div class="filter-card">
             <div class="filter-group"><label>📅 開始日期</label><input type="date" id="date-start"></div>
             <div class="filter-group"><label>📅 結束日期</label><input type="date" id="date-end"></div>
-            <div class="filter-group"><label>🔍 物料搜尋</label><input type="text" id="mat-filter" list="mat-list" placeholder="物料名稱..."><datalist id="mat-list"></datalist></div>
+            <div class="filter-group"><label>🔍 物料搜尋</label>
+                <input type="text" id="mat-filter" list="mat-list-data" placeholder="請輸入物料名稱...">
+                <datalist id="mat-list-data"></datalist>
+            </div>
             <button class="btn-run" onclick="generateReport()">Update</button>
         </div>
 
         <div class="stats-grid">
             <div class="chart-card" id="card-0">
                 <div class="chart-header">
-                    <div class="chart-title">📊 柏拉圖佔比分析</div>
+                    <div class="chart-title">📊 柏拉圖：物料佔比分析</div>
                     <div class="chart-controls">
                         <select id="source-0" class="chart-select" onchange="generateReport()">
-                            <option value="counts">次數佔比</option>
-                            <option value="tons">重量佔比</option>
+                            <option value="counts">物料入廠次數</option>
+                            <option value="tons">物料入廠噸數</option>
                         </select>
                         <button class="btn-copy-tool" onclick="copyAsImage('card-0')">📷 複製</button>
                     </div>
@@ -83,53 +101,7 @@
                 <div class="chart-container"><canvas id="canvas-0"></canvas></div>
             </div>
 
-            <div class="chart-card" id="card-1">
-                <div class="chart-header">
-                    <div class="chart-title" id="tit-1">📦 貨櫃入廠次數</div>
-                    <div class="chart-controls">
-                        <select id="type-1" class="chart-select" onchange="generateReport()"></select>
-                        <button class="btn-copy-tool" onclick="copyAsImage('card-1')">📷 複製</button>
-                    </div>
-                </div>
-                <div class="chart-container"><canvas id="canvas-1"></canvas></div>
-                <div class="analysis-box"><div id="box-1" class="stat-grid-mini"></div></div>
-            </div>
-
-            <div class="chart-card" id="card-2">
-                <div class="chart-header">
-                    <div class="chart-title" id="tit-2">⚖️ 入廠總重量分析</div>
-                    <div class="chart-controls">
-                        <select id="type-2" class="chart-select" onchange="generateReport()"></select>
-                        <button class="btn-copy-tool" onclick="copyAsImage('card-2')">📷 複製</button>
-                    </div>
-                </div>
-                <div class="chart-container"><canvas id="canvas-2"></canvas></div>
-                <div class="analysis-box"><div id="box-2" class="stat-grid-mini"></div></div>
-            </div>
-
-            <div class="chart-card" id="card-3">
-                <div class="chart-header">
-                    <div class="chart-title" id="tit-3">⏱️ 作業工時分析(分)</div>
-                    <div class="chart-controls">
-                        <select id="type-3" class="chart-select" onchange="generateReport()"></select>
-                        <button class="btn-copy-tool" onclick="copyAsImage('card-3')">📷 複製</button>
-                    </div>
-                </div>
-                <div class="chart-container"><canvas id="canvas-3"></canvas></div>
-                <div class="analysis-box"><div id="box-3" class="stat-grid-mini"></div></div>
-            </div>
-
-            <div class="chart-card" id="card-4">
-                <div class="chart-header">
-                    <div class="chart-title" id="tit-4">🔥 24H 貨櫃入廠流量分佈</div>
-                    <div class="chart-controls">
-                        <select id="type-4" class="chart-select" onchange="generateReport()"></select>
-                        <button class="btn-copy-tool" onclick="copyAsImage('card-4')">📷 複製</button>
-                    </div>
-                </div>
-                <div class="chart-container"><canvas id="canvas-4"></canvas></div>
-                <div class="analysis-box"><div id="box-4" class="stat-grid-mini"></div></div>
-            </div>
+            <div id="dynamic-charts"></div>
         </div>
     </div>
 
@@ -137,37 +109,86 @@
     Chart.register(ChartDataLabels);
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxX-XRuXqIB7JJopFGYaHtiAk6kZfe19bFihOd7HCxrA-ffKQGXDoIfJwwPYFLZER8c/exec";
     let rawData = [], charts = {};
+    const chartConfigs = [
+        { id: 1, name: "📦 貨櫃入廠次數", source: "counts" },
+        { id: 2, name: "⚖️ 入廠總重量分析", source: "tons" },
+        { id: 3, name: "⏱️ 作業工時分析(分)", source: "hours" },
+        { id: 4, name: "🔥 24H 貨櫃入廠流量分佈", source: "counts" }
+    ];
 
     window.onload = async () => {
-        initSelectors();
+        loadDefaultUI();
         const now = new Date();
         document.getElementById('date-start').value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
         document.getElementById('date-end').value = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+        
         toggleLoading(true);
         try {
             const r = await fetch(`${GAS_URL}?action=loadRecords`);
             const res = await r.json();
-            if (res.result === 'success') { rawData = res.data; generateReport(); }
+            if (res.result === 'success') { 
+                rawData = res.data; 
+                initMatDatalist();
+                generateReport(); 
+            }
         } catch (e) { console.error(e); }
         toggleLoading(false);
     };
 
-    function initSelectors() {
+    function loadDefaultUI() {
+        let html = '', setHtml = '';
         const types = [ {v:'bar', n:'長條圖'}, {v:'line', n:'趨勢圖'}, {v:'area', n:'面積圖'}, {v:'stepped', n:'階梯圖'}, {v:'radar', n:'雷達圖'} ];
-        [1,2,3,4].forEach(i => {
-            document.getElementById(`type-${i}`).innerHTML = types.map(o => `<option value="${o.v}">${o.n}</option>`).join('');
+        
+        chartConfigs.forEach(conf => {
+            const savedType = localStorage.getItem(`def_type_${conf.id}`) || (conf.id === 4 ? 'radar' : conf.id === 3 ? 'stepped' : 'bar');
+            html += `
+                <div class="chart-card" id="card-${conf.id}">
+                    <div class="chart-header">
+                        <div class="chart-title">${conf.name}</div>
+                        <div class="chart-controls">
+                            <select id="type-${conf.id}" class="chart-select" onchange="generateReport()">
+                                ${types.map(t => `<option value="${t.v}" ${t.v === savedType ? 'selected' : ''}>${t.n}</option>`).join('')}
+                            </select>
+                            <button class="btn-copy-tool" onclick="copyAsImage('card-${conf.id}')">📷 複製</button>
+                        </div>
+                    </div>
+                    <div class="chart-container"><canvas id="canvas-${conf.id}"></canvas></div>
+                    <div class="analysis-box"><div id="box-${conf.id}" class="stat-grid-mini"></div></div>
+                </div>`;
+            
+            setHtml += `
+                <div class="set-item">
+                    <label>${conf.name} 預設類型</label>
+                    <select id="set-type-${conf.id}" class="chart-select" style="width:100%">
+                        ${types.map(t => `<option value="${t.v}" ${t.v === savedType ? 'selected' : ''}>${t.n}</option>`).join('')}
+                    </select>
+                </div>`;
         });
-        document.getElementById('type-1').value = 'bar';
-        document.getElementById('type-2').value = 'area';
-        document.getElementById('type-3').value = 'stepped';
-        document.getElementById('type-4').value = 'radar';
+        document.getElementById('dynamic-charts').innerHTML = html;
+        document.getElementById('def-settings-list').innerHTML = setHtml;
+    }
+
+    function saveSettings() {
+        chartConfigs.forEach(conf => {
+            const val = document.getElementById(`set-type-${conf.id}`).value;
+            localStorage.setItem(`def_type_${conf.id}`, val);
+            document.getElementById(`type-${conf.id}`).value = val;
+        });
+        toggleSettings();
+        generateReport();
+    }
+
+    function initMatDatalist() {
+        const mats = [...new Set(rawData.map(r => r.formNo).filter(Boolean))].sort();
+        document.getElementById('mat-list-data').innerHTML = mats.map(m => `<option value="${m}">`).join('');
     }
 
     function generateReport() {
         const start = new Date(document.getElementById('date-start').value);
         const end = new Date(document.getElementById('date-end').value);
         const filter = document.getElementById('mat-filter').value;
-        let dailyData = {}, hourlyFlow = Array(24).fill(0), days = 0;
+        
+        let dailyData = {}, matStats = {}, hourlyFlow = Array(24).fill(0), days = 0;
 
         for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
             dailyData[d.toISOString().split('T')[0]] = { tons: 0, hours: 0, counts: 0 }; days++;
@@ -177,29 +198,35 @@
             const m = r.startTime?.match(/(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})/);
             if (m) {
                 const dObj = new Date(m[3], m[2]-1, m[1], m[4], m[5]), dKey = dObj.toISOString().split('T')[0];
-                if (dailyData[dKey] && (!filter || r.formNo === filter)) {
+                const matName = r.formNo || "未知物料";
+                if (dailyData[dKey] && (!filter || matName === filter)) {
                     const tw = (parseFloat(r.concernSection) || 0) / 1000;
+                    const th = parseFloat(r.totalTime || 0);
+                    
                     dailyData[dKey].counts++; 
                     dailyData[dKey].tons += tw;
-                    dailyData[dKey].hours += parseFloat(r.totalTime || 0);
+                    dailyData[dKey].hours += th;
                     hourlyFlow[dObj.getHours()]++;
+
+                    if (!matStats[matName]) matStats[matName] = { counts: 0, tons: 0 };
+                    matStats[matName].counts++;
+                    matStats[matName].tons += tw;
                 }
             }
         });
 
-        renderPareto(dailyData);
-        [1,2,3,4].forEach(i => renderModule(i, Object.keys(dailyData).sort(), dailyData, hourlyFlow, days));
+        renderPareto(matStats);
+        chartConfigs.forEach(conf => renderModule(conf.id, Object.keys(dailyData).sort(), dailyData, hourlyFlow));
     }
 
-    function renderPareto(dayMap) {
+    function renderPareto(matStats) {
         const source = document.getElementById('source-0').value;
-        const labels = Object.keys(dayMap).sort();
-        let items = labels.map(l => ({ label: l, value: dayMap[l][source === 'counts' ? 'counts' : 'tons'] }));
-        items = items.sort((a, b) => b.value - a.value).filter(i => i.value > 0);
+        let items = Object.keys(matStats).map(name => ({ label: name, value: matStats[name][source] }));
+        items = items.sort((a, b) => b.value - a.value).slice(0, 15); // 只取前 15 名
         
         const total = items.reduce((a, b) => a + b.value, 0);
         let acc = 0;
-        const ParetoData = items.map(it => { acc += it.value; return (acc / total * 100); });
+        const paretoLine = items.map(it => { acc += it.value; return (acc / total * 100); });
 
         const ctx = document.getElementById('canvas-0').getContext('2d');
         if (charts[0]) charts[0].destroy();
@@ -209,50 +236,45 @@
                 labels: items.map(i => i.label),
                 datasets: [
                     { label: '數值', data: items.map(i => i.value), backgroundColor: '#2196F3', yAxisID: 'y' },
-                    { label: '累計 %', data: ParetoData, type: 'line', borderColor: '#F44336', backgroundColor: '#F44336', yAxisID: 'y1', pointRadius: 4 }
+                    { label: '累計 %', data: paretoLine, type: 'line', borderColor: '#F44336', backgroundColor: '#F44336', yAxisID: 'y1', pointRadius: 4 }
                 ]
             },
             options: { 
                 responsive: true, maintainAspectRatio: false,
-                layout: { padding: { top: 35, right: 10 } },
+                layout: { padding: { top: 35, right: 15 } },
                 scales: { 
-                    y: { beginAtZero: true }, 
-                    y1: { position: 'right', max: 100, beginAtZero: true, grid: { display: false } } 
+                    y: { beginAtZero: true, title: { display: true, text: '數值' } }, 
+                    y1: { position: 'right', max: 100, beginAtZero: true, grid: { display: false }, title: { display: true, text: '累計百分比 %' } } 
                 },
                 plugins: { 
                     legend: { display: false },
-                    datalabels: { display: (ctx) => ctx.datasetIndex === 0, anchor: 'end', align: 'top', font: {weight: 'bold'} } 
+                    datalabels: { display: (ctx) => ctx.datasetIndex === 0, anchor: 'end', align: 'top' } 
                 }
             }
         });
     }
 
-    function renderModule(idx, labels, dayMap, hFlow, dCount) {
+    function renderModule(idx, labels, dayMap, hFlow) {
         const type = document.getElementById(`type-${idx}`).value;
-        const source = idx === 1 ? 'counts' : idx === 2 ? 'tons' : idx === 3 ? 'hours' : 'counts';
+        const conf = chartConfigs.find(c => c.id === idx);
         const color = ['#4CAF50', '#2196F3', '#FF9800', '#9C27B0'][idx-1];
 
         let finalLabels = idx === 4 ? Array.from({length:24},(_,i)=>i+'h') : labels;
-        let finalData = idx === 4 ? hFlow : finalLabels.map(l => dayMap[l][source]);
+        let finalData = idx === 4 ? hFlow : finalLabels.map(l => dayMap[l][conf.source]);
 
         const ctx = document.getElementById(`canvas-${idx}`).getContext('2d');
         if (charts[idx]) charts[idx].destroy();
 
-        const config = {
+        charts[idx] = new Chart(ctx, {
             type: (type === 'area' || type === 'stepped') ? 'line' : type,
             data: { labels: finalLabels, datasets: [{ data: finalData, backgroundColor: color + '44', borderColor: color, borderWidth: 3, fill: type === 'area', stepped: type === 'stepped', tension: 0.3 }] },
             options: {
                 responsive: true, maintainAspectRatio: false,
                 layout: { padding: { top: 35 } },
-                plugins: { 
-                    legend: { display: false }, 
-                    datalabels: { display: true, anchor: 'end', align: 'top', clip: false, formatter: v => v > 0 ? v.toFixed(idx === 2 ? 1 : 0) : '' } 
-                },
-                scales: { y: { beginAtZero: true } }
+                plugins: { legend: { display: false }, datalabels: { display: true, anchor: 'end', align: 'top', formatter: v => v > 0 ? v.toFixed(idx === 2 ? 1 : 0) : '' } },
+                scales: idx === 4 && type === 'radar' ? {} : { y: { beginAtZero: true } }
             }
-        };
-        if(type === 'radar') delete config.options.scales.y;
-        charts[idx] = new Chart(ctx, config);
+        });
         updateAnalysis(idx, labels, dayMap);
     }
 
@@ -260,7 +282,6 @@
         const totalC = labels.reduce((a, k) => a + dayMap[k].counts, 0);
         const totalT = labels.reduce((a, k) => a + dayMap[k].tons, 0);
         const totalH = labels.reduce((a, k) => a + dayMap[k].hours, 0);
-        
         document.getElementById(`box-${idx}`).innerHTML = `
             <div class="stat-line"><span class="stat-label">總入廠次數</span><span class="stat-num">${totalC}</span></div>
             <div class="stat-line"><span class="stat-label">平均工時</span><span class="stat-num">${totalC>0?(totalH/totalC).toFixed(1):0}m</span></div>
@@ -269,29 +290,16 @@
     }
 
     async function copyAsImage(cardId) {
-        const element = document.getElementById(cardId);
-        // 暫時隱藏複製按鈕與選擇框以保持圖片美觀
-        const controls = element.querySelector('.chart-controls');
-        controls.style.visibility = 'hidden';
-        
-        try {
-            const canvas = await html2canvas(element, { 
-                scale: 2, 
-                backgroundColor: '#ffffff',
-                logging: false,
-                useCORS: true
-            });
-            canvas.toBlob(async b => {
-                await navigator.clipboard.write([new ClipboardItem({"image/png": b})]);
-                alert("圖片已成功複製到剪貼簿！");
-            });
-        } catch (err) {
-            alert("複製失敗，請稍後再試。");
-        } finally {
-            controls.style.visibility = 'visible';
-        }
+        const el = document.getElementById(cardId);
+        const btn = el.querySelector('.btn-copy-tool');
+        const sel = el.querySelector('.chart-select');
+        btn.style.visibility = 'hidden'; sel.style.visibility = 'hidden';
+        const canvas = await html2canvas(el, { scale: 2 });
+        btn.style.visibility = 'visible'; sel.style.visibility = 'visible';
+        canvas.toBlob(b => navigator.clipboard.write([new ClipboardItem({"image/png": b})]).then(() => alert("圖片已複製")));
     }
     
+    function toggleSettings() { document.getElementById('settings-panel').classList.toggle('active'); }
     function toggleLoading(show) { document.getElementById('loading').style.display = show ? 'flex' : 'none'; }
 </script>
 </body>
