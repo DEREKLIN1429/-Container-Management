@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Logistics Intelligence Dashboard v35.0</title>
+    <title>Logistics Intelligence Dashboard v36.0</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
@@ -12,59 +12,43 @@
         body { font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--text); }
         .container { max-width: 1400px; margin: 0 auto; width: 100%; }
         .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        
-        #settings-panel { 
-            position: fixed; top: 0; right: -450px; width: 350px; height: 100%; background: var(--white); 
-            box-shadow: -5px 0 20px rgba(0,0,0,0.1); z-index: 2000; transition: 0.4s; padding: 25px; overflow-y: auto; 
-        }
+        #settings-panel { position: fixed; top: 0; right: -450px; width: 350px; height: 100%; background: var(--white); box-shadow: -5px 0 20px rgba(0,0,0,0.1); z-index: 2000; transition: 0.4s; padding: 25px; overflow-y: auto; }
         #settings-panel.active { right: 0; }
         .set-item { margin-bottom: 15px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; }
         .set-item label { display: block; font-weight: bold; font-size: 0.85rem; margin-bottom: 5px; color: #64748b; }
-
         .filter-card { background: var(--white); padding: 20px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 25px; }
         .filter-group { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 140px; }
-        .filter-group label { cursor: pointer; font-weight: 900; color: var(--accent); transition: 0.2s; }
-        .filter-group label:hover { color: var(--primary); }
+        .filter-group label { cursor: pointer; font-weight: 900; color: var(--accent); }
         input { padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 1rem; width: 100%; box-sizing: border-box; }
-        
         .btn-run { background: var(--accent); color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: 900; font-size: 1.1rem; height: 50px; width: 100%; }
-
         .chart-card { background: var(--white); padding: 20px; border-radius: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); margin-bottom: 30px; position: relative; width: 100%; box-sizing: border-box; }
         .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; flex-wrap: wrap; gap: 10px; }
         .chart-title { font-weight: 900; font-size: 1.2rem; flex: 1; }
         .chart-controls { display: flex; gap: 8px; align-items: center; }
         .chart-select { padding: 6px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.8rem; font-weight: bold; background: #fff; }
         .btn-copy-tool { background: #f1f5f9; border: 1px solid var(--border); border-radius: 6px; padding: 6px 12px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
-
         .chart-container { height: 350px; width: 100%; position: relative; margin-bottom: 15px; }
         .analysis-box { padding: 15px; background: #f8fafc; border-left: 5px solid var(--primary); border-radius: 10px; box-sizing: border-box; width: 100%; }
         .stat-grid-mini { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
         .stat-line { display: flex; flex-direction: column; border-bottom: 1px dashed #eee; padding-bottom: 5px; }
         .stat-label { font-weight: bold; color: #64748b; font-size: 0.75rem; }
         .stat-num { font-weight: 900; color: var(--primary); font-size: 1rem; }
-
         #toast-msg { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 10px 25px; border-radius: 25px; z-index: 9999; display: none; }
-
-        @media (min-width: 768px) {
-            .chart-container { height: 450px; }
-            .btn-run { width: 150px; height: 65px; }
-            .chart-title { font-size: 1.6rem; }
-            .stat-grid-mini { grid-template-columns: repeat(4, 1fr); }
-        }
+        @media (min-width: 768px) { .chart-container { height: 450px; } .btn-run { width: 150px; height: 65px; } .chart-title { font-size: 1.6rem; } .stat-grid-mini { grid-template-columns: repeat(4, 1fr); } }
     </style>
 </head>
 <body>
 
     <div id="loading" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); display:none; flex-direction:column; align-items:center; justify-content:center; z-index:5000;">
         <div style="border:8px solid #f3f3f3; border-top:8px solid var(--primary); border-radius:50%; width:60px; height:60px; animation:spin 1s linear infinite;"></div>
-        <h2 style="margin-top:20px; font-weight:900;">數據更新中...</h2>
+        <h2 style="margin-top:20px; font-weight:900;">從 Google 讀取資料中...</h2>
     </div>
 
-    <div id="toast-msg">✅ 圖片已複製到剪貼簿</div>
+    <div id="toast-msg">✅ 圖片已複製</div>
 
     <div id="settings-panel">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h3 style="margin:0;">⚙️ 系統設定</h3>
+            <h3>⚙️ 系統設定</h3>
             <button onclick="toggleSettings()" style="border:none; background:none; font-size:1.5rem; cursor:pointer;">&times;</button>
         </div>
         <div class="set-item"><label>⚖️ 噸數小數位數</label><input type="number" id="set-ton-dec" value="1" min="0"></div>
@@ -75,16 +59,16 @@
 
     <div class="container">
         <div class="top-bar">
-            <h1 style="font-weight: 900; font-size: 1.6rem; margin:0;">物流分析報表 v35.0</h1>
-            <button class="btn-copy-tool" onclick="toggleSettings()">⚙️ 設定面板</button>
+            <h1 style="font-weight: 900; font-size: 1.6rem; margin:0;">物流分析報表 v36.0 (公開版)</h1>
+            <button class="btn-copy-tool" onclick="toggleSettings()">⚙️ 設定</button>
         </div>
 
         <div class="filter-card">
             <div class="filter-group"><label>📅 開始日期</label><input type="date" id="date-start"></div>
             <div class="filter-group"><label>📅 結束日期</label><input type="date" id="date-end"></div>
             <div class="filter-group">
-                <label onclick="clearMatSearch()">🔍 物料關鍵字搜尋 (點此清除)</label>
-                <input type="text" id="mat-filter" list="mat-list-data" placeholder="輸入關鍵字...">
+                <label onclick="clearMatSearch()">🔍 物料搜尋 (點此清除)</label>
+                <input type="text" id="mat-filter" list="mat-list-data" placeholder="關鍵字搜尋...">
                 <datalist id="mat-list-data"></datalist>
             </div>
             <button class="btn-run" onclick="generateReport()">Update</button>
@@ -110,8 +94,9 @@
 
 <script>
     Chart.register(ChartDataLabels);
-    // 重要：請替換為你的 Apps Script 部署網址
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbxX-XRuXqIB7JJopFGYaHtiAk6kZfe19bFihOd7HCxrA-ffKQGXDoIfJwwPYFLZER8c/exec";
+    // 使用發布為 CSV 的網址
+    const PUB_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQjY5PdR1CTA2gcvbeIPSFYflT2WHKWxELGliEG8c-fcCm9KlpTBlTbUIMDTCH1SieAITuY02SS65ic/pub?gid=0&single=true&output=csv";
+    
     let rawData = [], charts = {};
     const chartConfigs = [
         { id: 1, name: "📦 貨櫃入廠次數", source: "counts" },
@@ -127,23 +112,41 @@
         document.getElementById('date-start').value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
         document.getElementById('date-end').value = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
         
+        await fetchPublishedData();
+    };
+
+    async function fetchPublishedData() {
         toggleLoading(true);
         try {
-            const r = await fetch(`${GAS_URL}?action=loadRecords`);
-            const res = await r.json();
-            if (res.result === 'success') { 
-                rawData = res.data; 
-                initMatDatalist();
-                generateReport(); 
-            } else {
-                alert("資料讀取失敗: " + res.error);
-            }
-        } catch (e) { 
-            console.error(e);
-            alert("無法連線至後端，請檢查 GAS 部署與權限。");
+            const response = await fetch(PUB_URL);
+            const csvText = await response.text();
+            rawData = parseCSV(csvText);
+            initMatDatalist();
+            generateReport();
+        } catch (e) {
+            alert("讀取公開資料失敗，請確認 Google Sheet 是否已發布為 CSV 格式。");
         }
         toggleLoading(false);
-    };
+    }
+
+    // 簡易 CSV 解析器 (對應你的 Excel 欄位)
+    function parseCSV(csv) {
+        const lines = csv.split('\n');
+        const result = [];
+        // 假設第一列是標題，從第二列開始
+        for (let i = 1; i < lines.length; i++) {
+            const cols = lines[i].split(',');
+            if (cols.length < 5) continue;
+            result.push({
+                machine: cols[0],          // A: SAP CODE
+                formNo: cols[1],           // B: Material Name
+                startTime: cols[2],        // C: Arrival Time
+                totalTime: cols[4],        // E: Total Time
+                concernSection: cols[10]   // K: Weight
+            });
+        }
+        return result;
+    }
 
     function loadSettingsFromStorage() {
         document.getElementById('set-ton-dec').value = localStorage.getItem('set_ton_dec') || 1;
@@ -175,22 +178,17 @@
         document.getElementById('mat-list-data').innerHTML = mats.map(m => `<option value="${m}">`).join('');
     }
 
-    function clearMatSearch() {
-        document.getElementById('mat-filter').value = '';
-        generateReport();
-    }
+    function clearMatSearch() { document.getElementById('mat-filter').value = ''; generateReport(); }
 
     function generateReport() {
         const startStr = document.getElementById('date-start').value;
         const endStr = document.getElementById('date-end').value;
         if (!startStr || !endStr) return;
 
-        const startLimit = new Date(startStr);
-        startLimit.setHours(0, 0, 0, 0);
-        const endLimit = new Date(endStr);
-        endLimit.setHours(23, 59, 59, 999);
-
+        const startLimit = new Date(startStr); startLimit.setHours(0,0,0,0);
+        const endLimit = new Date(endStr); endLimit.setHours(23,59,59,999);
         const filterKeyword = document.getElementById('mat-filter').value.toLowerCase();
+        
         let dailyData = {}, matStatsAll = {}, hourlyFlow = Array(24).fill(0);
 
         for (let d = new Date(startLimit); d <= endLimit; d.setDate(d.getDate() + 1)) {
@@ -203,7 +201,7 @@
                 const dObj = new Date(m[3], m[2]-1, m[1], m[4], m[5]);
                 if (dObj >= startLimit && dObj <= endLimit) {
                     const dKey = dObj.toISOString().split('T')[0];
-                    const matName = r.formNo || "未知物料";
+                    const matName = r.formNo || "未知";
                     const isMatch = !filterKeyword || matName.toLowerCase().includes(filterKeyword);
 
                     if (!matStatsAll[matName]) matStatsAll[matName] = { counts: 0, tons: 0 };
@@ -230,6 +228,7 @@
         let items = Object.keys(matStats).map(name => ({ label: name, value: matStats[name][source] }));
         items.sort((a, b) => b.value - a.value);
         let finalItems = items.slice(0, 10);
+        if (finalItems.length === 0) return;
         
         const total = finalItems.reduce((a, b) => a + b.value, 0);
         let acc = 0;
@@ -242,25 +241,15 @@
             data: {
                 labels: finalItems.map(i => i.label),
                 datasets: [
-                    { label: '數值', data: finalItems.map(i => i.value), backgroundColor: '#2196F3', yAxisID: 'y' },
-                    { label: '累計 %', data: paretoLine, type: 'line', borderColor: '#F44336', backgroundColor: '#F44336', yAxisID: 'y1', pointRadius: 5 }
+                    { data: finalItems.map(i => i.value), backgroundColor: '#2196F3', yAxisID: 'y' },
+                    { data: paretoLine, type: 'line', borderColor: '#F44336', backgroundColor: '#F44336', yAxisID: 'y1', pointRadius: 5 }
                 ]
             },
             options: { 
                 responsive: true, maintainAspectRatio: false,
                 layout: { padding: { top: 40, right: 20 } },
-                scales: { 
-                    y: { beginAtZero: true }, 
-                    y1: { position: 'right', max: 100, beginAtZero: true, grid: { display: false } } 
-                },
-                plugins: { 
-                    legend: { display: false },
-                    datalabels: { 
-                        display: (ctx) => ctx.datasetIndex === 0, anchor: 'end', align: 'top', 
-                        font: { size: 14, weight: 'bold' },
-                        formatter: v => v.toFixed(source === 'tons' ? tonDec : 0)
-                    } 
-                }
+                scales: { y: { beginAtZero: true }, y1: { position: 'right', max: 100, beginAtZero: true, grid: { display: false } } },
+                plugins: { legend: { display: false }, datalabels: { display: (ctx) => ctx.datasetIndex === 0, anchor: 'end', align: 'top', font: { size: 14, weight: 'bold' }, formatter: v => v.toFixed(source === 'tons' ? tonDec : 0) } }
             }
         });
     }
@@ -283,10 +272,7 @@
             options: {
                 responsive: true, maintainAspectRatio: false,
                 layout: { padding: { top: 45 } },
-                plugins: { 
-                    legend: { display: false }, 
-                    datalabels: { display: true, anchor: 'end', align: 'top', font: { size: 14, weight: 'bold' }, formatter: v => v > 0 ? v.toFixed(idx === 2 ? tonDec : 0) : '' } 
-                },
+                plugins: { legend: { display: false }, datalabels: { display: true, anchor: 'end', align: 'top', font: { size: 14, weight: 'bold' }, formatter: v => v > 0 ? v.toFixed(idx === 2 ? tonDec : 0) : '' } },
                 scales: idx === 4 && type === 'radar' ? {} : { y: { beginAtZero: true } }
             }
         });
