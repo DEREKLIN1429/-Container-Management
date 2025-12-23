@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>原管貨櫃管理報表 v3.8</title>
+    <title>原管貨櫃管理報表 v3.9</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
@@ -18,18 +18,18 @@
         .monitor-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; max-height: 500px; overflow-y: auto; padding-right: 10px; }
         @media (max-width: 900px) { .monitor-grid { grid-template-columns: 1fr; } }
         .progress-card { background: rgba(255,255,255,0.1); padding: 18px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); }
-        .progress-info { display: flex; justify-content: space-between; margin-bottom: 8px; font-weight: bold; }
+        .truck-no { font-size: 0.8rem; color: #3b82f6; background: rgba(59, 130, 246, 0.1); padding: 2px 8px; border-radius: 4px; font-weight: bold; }
+        .progress-info { display: flex; justify-content: space-between; margin: 8px 0; font-weight: bold; }
         .progress-bar-bg { background: rgba(255,255,255,0.2); height: 12px; border-radius: 6px; overflow: hidden; }
         .progress-bar-fill { height: 100%; transition: width 0.5s; }
         .kpi-row { display: flex; justify-content: space-between; font-size: 0.85rem; margin-top: 8px; }
         #settings-panel { position: fixed; top: 0; right: -450px; width: 350px; height: 100%; background: var(--white); z-index: 5000; transition: 0.4s; padding: 25px; box-shadow: -10px 0 30px rgba(0,0,0,0.2); overflow-y: auto; }
         #settings-panel.active { right: 0; }
-        .set-item { margin-bottom: 20px; border-bottom: 1px solid #f1f5f9; padding-bottom: 15px; }
         .chart-card { background: var(--white); padding: 25px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); margin-bottom: 30px; border: 1px solid var(--border); }
         .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .chart-container { height: 400px; width: 100%; position: relative; }
         .stat-grid-mini { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 15px; background: #f8fafc; padding: 15px; border-radius: 12px; text-align: center; }
-        .stat-num { font-weight: 800; color: var(--primary); font-size: 1.2rem; }
+        .stat-num { font-weight: 800; color: var(--primary); font-size: 1.1rem; }
         .btn-run { padding: 12px 30px; background: var(--accent); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; }
         input, select { padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; }
         #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 10px 25px; border-radius: 50px; display: none; z-index: 10000; }
@@ -47,12 +47,12 @@
         <div class="set-item"><label id="set-ref-lbl">🔄 自動刷新秒數</label><input type="number" id="set-refresh-rate" style="width:100%;"></div>
         <div class="set-item"><label id="set-base-lbl">⏱️ 基準作業時間 (Min)</label><input type="number" id="set-base-time" placeholder="預設：每月平均" style="width:100%;"></div>
         <div id="settings-list"></div>
-        <button class="btn-run" style="width:100%;" onclick="saveSettings()" id="set-save-btn">儲存</button>
+        <button class="btn-run" style="width:100%; margin-top:20px;" onclick="saveSettings()" id="set-save-btn">儲存</button>
     </div>
 
     <div class="container">
         <header class="header-main">
-            <h1 class="header-title" id="main-title">原管貨櫃管理報表 v3.8</h1>
+            <h1 class="header-title" id="main-title">原管貨櫃管理報表 v3.9</h1>
             <div style="display:flex; gap:10px;">
                 <select id="ui-lang" onchange="changeLanguage()"><option value="zh">繁體中文</option><option value="en">English</option><option value="hi">हिन्दी</option></select>
                 <button onclick="toggleSettings()" style="padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:bold;">⚙️ 設定</button>
@@ -61,25 +61,22 @@
 
         <div class="today-monitor">
             <div class="monitor-header">
-                <div style="display:flex; align-items:center; gap:15px;"><h2 id="mon-title">🚚 今日監控</h2><input type="date" id="mon-date" onchange="renderTodayMonitor()"></div>
+                <div style="display:flex; align-items:center; gap:15px;"><h2 id="mon-title">🚚 今日動態</h2><input type="date" id="mon-date" onchange="renderTodayMonitor()"></div>
                 <div style="text-align:right;"><div id="monitor-count">...</div><div id="refresh-timer" style="font-size:0.8rem; opacity:0.7;"></div></div>
             </div>
             <div class="monitor-grid" id="monitor-list"></div>
         </div>
 
-        <div class="filter-card" style="background:white; padding:20px; border-radius:15px; margin-bottom:25px; display:flex; gap:15px; align-items:flex-end; box-shadow:0 4px 10px rgba(0,0,0,0.05);">
-            <div style="flex:1;"><label id="lbl-start">起始日期</label><input type="date" id="date-start" style="width:100%;"></div>
-            <div style="flex:1;"><label id="lbl-end">結束日期</label><input type="date" id="date-end" style="width:100%;"></div>
+        <div class="filter-card">
+            <div style="flex:1;"><label id="lbl-start">起始</label><input type="date" id="date-start" style="width:100%;"></div>
+            <div style="flex:1;"><label id="lbl-end">結束</label><input type="date" id="date-end" style="width:100%;"></div>
             <div style="flex:1;"><label id="lbl-mat">搜尋</label><input type="text" id="mat-filter" list="mat-list" style="width:100%;"><datalist id="mat-list"></datalist></div>
             <button class="btn-run" onclick="generateReport()" id="btn-update">更新</button>
         </div>
 
         <div id="card-0" class="chart-card">
             <div class="chart-header">
-                <div style="display:flex; flex-direction:column;">
-                    <div style="font-weight:bold;" id="tit-pareto">📊 柏拉圖分析</div>
-                    <div id="pareto-total" style="font-size:0.85rem; color:var(--primary); font-weight:bold; margin-top:5px;"></div>
-                </div>
+                <div style="display:flex; flex-direction:column;"><div style="font-weight:bold;" id="tit-pareto">📊 柏拉圖分析</div><div id="pareto-total" style="font-size:0.85rem; color:var(--primary); font-weight:bold; margin-top:5px;"></div></div>
                 <div style="display:flex; gap:10px;">
                     <select id="source-0" onchange="generateReport()"><option value="tons" id="opt-tons">噸數</option><option value="counts" id="opt-counts">次數</option></select>
                     <button class="btn-copy" onclick="copyChart('card-0')">📷</button>
@@ -95,9 +92,9 @@
     const PUB_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQjY5PdR1CTA2gcvbeIPSFYflT2WHKWxELGliEG8c-fcCm9KlpTBlTbUIMDTCH1SieAITuY02SS65ic/pub?gid=0&single=true&output=csv";
     
     const i18n = {
-        zh: { title: "原管貨櫃管理報表 v3.8", mon: "🚚 今日動態 (07:00-07:00)", monCount: "本日累計", start: "📅 起始", end: "📅 結束", mat: "🔍 搜尋", update: "更新", pareto: "📊 柏拉圖：物料入廠佔比", optT: "以噸數計", optC: "以次數計", cT: "📦 頻次趨勢", wT: "⚖️ 載重分析", hT: "⏱️ 卸貨時間(Min)", aT: "🔥 24H 流量分佈", l1: "總車次", l2: "平均效率", l3: "總重量", l4: "總工時", setT: "⚙️ 設定", setS: "儲存", copy: "✅ 已複製", refSec: "秒後刷新", monBase: "基準", monRate: "達成率", monArr: "入廠", total: "加總" },
-        en: { title: "Container Report v3.8", mon: "🚚 Live (07:00-07:00)", monCount: "Today", start: "📅 Start", end: "📅 End", mat: "🔍 Search", update: "Update", pareto: "📊 Pareto Analysis", optT: "By Tons", optC: "By Counts", cT: "📦 Frequency", wT: "⚖️ Tonnage", hT: "⏱️ Unloading (Min)", aT: "🔥 24H Flow", l1: "Units", l2: "Avg", l3: "Weight", l4: "Hours", setT: "⚙️ Settings", setS: "Save", copy: "✅ Copied", refSec: "s to refresh", monBase: "Base", monRate: "Rate", monArr: "Arrival", total: "Total" },
-        hi: { title: "रिपोर्ट v3.8", mon: "🚚 आज का प्रवाह", monCount: "कुल", start: "📅 प्रारंभ", end: "📅 अंतिम", mat: "🔍 खोज", update: "अपडेट", pareto: "📊 पारेतो विश्लेषण", optT: "वजन", optC: "संख्या", cT: "📦 आगमन", wT: "⚖️ वजन", hT: "⏱️ कार्य कुशलता", aT: "🔥 24H प्रवाह", l1: "इकाइयां", l2: "औसत", l3: "वजन", l4: "घंटे", setT: "⚙️ सेटिंग्स", setS: "सहेजें", copy: "✅ कॉपी", refSec: "सेकंड", monBase: "आधार", monRate: "दर", monArr: "आगमन", total: "कुल" }
+        zh: { title: "原管貨櫃管理報表 v3.9", mon: "🚚 今日動態 (07:00-07:00)", monCount: "本日累計", start: "📅 起始", end: "📅 結束", mat: "🔍 搜尋", update: "更新", pareto: "📊 柏拉圖分析", optT: "以噸數計", optC: "以次數計", cT: "📦 頻次趨勢", wT: "⚖️ 載重分析", hT: "⏱️ 卸貨時間(Min)", aT: "🔥 24H 流量分佈", l1: "總車次", l2_1: "日平均次數", l2_2: "日平均重量", l2_3: "平均效率", l2_4: "分布時段", l3: "總重量", l4: "總工時", setT: "⚙️ 設定", setS: "儲存", copy: "✅ 已複製", refSec: "秒後刷新", monBase: "基準", monRate: "達成率", monArr: "入廠", total: "加總" },
+        en: { title: "Container Report v3.9", mon: "🚚 Live (07:00-07:00)", monCount: "Today", start: "📅 Start", end: "📅 End", mat: "🔍 Search", update: "Update", pareto: "📊 Pareto Analysis", optT: "By Tons", optC: "By Counts", cT: "📦 Frequency", wT: "⚖️ Tonnage", hT: "⏱️ Unloading (Min)", aT: "🔥 24H Flow", l1: "Total Units", l2_1: "Daily Avg Counts", l2_2: "Daily Avg Weight", l2_3: "Avg Efficiency", l2_4: "Flow Period", l3: "Total Weight", l4: "Total Hours", setT: "⚙️ Settings", setS: "Save", copy: "✅ Copied", refSec: "s to refresh", monBase: "Base", monRate: "Rate", monArr: "Arrival", total: "Total" },
+        hi: { title: "रिपोर्ट v3.9", mon: "🚚 आज का प्रवाह", monCount: "कुल", start: "📅 प्रारंभ", end: "📅 अंतिम", mat: "🔍 खोज", update: "अपडेट", pareto: "📊 पारेतो विश्लेषण", optT: "वजन", optC: "संख्या", cT: "📦 आगमन", wT: "⚖️ वजन", hT: "⏱️ कार्य कुशलता", aT: "🔥 24H प्रवाह", l1: "कुल इकाइयां", l2_1: "दैनिक औसत", l2_2: "औसत वजन", l2_3: "कुशलता", l2_4: "समय अवधि", l3: "कुल वजन", l4: "घंटे", setT: "⚙️ सेटिंग्स", setS: "सहेजें", copy: "✅ कॉपी", refSec: "सेकंड", monBase: "आधार", monRate: "दर", monArr: "आगमन", total: "कुल" }
     };
 
     let rawData = [], charts = {}, lastLabels = [], lastDayMap = {}, lastMatStats = {}, avgWorkTime = 60, gFlow = Array(24).fill(0);
@@ -132,8 +129,14 @@
     function parseCSV(csv) {
         return csv.split(/\r?\n/).slice(1).map(l => {
             const c = l.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+            // c[0]=TruckNo, c[1]=MaterialName, c[2]=Arrival, c[3]=End, c[4]=Total, c[10]=Weight
             return c.length < 11 ? null : { 
-                formNo: c[1] || "Unknown", arrivalTime: c[2], endTime: c[3], totalTime: parseFloat(c[4]) || 0, weight: parseFloat(c[10]) || 0 
+                truckNo: c[0] || "Unknown", 
+                matName: c[1] || "N/A", 
+                arrivalTime: c[2], 
+                endTime: c[3], 
+                totalTime: parseFloat(c[4]) || 0, 
+                weight: parseFloat(c[10]) || 0 
             };
         }).filter(x => x);
     }
@@ -150,7 +153,7 @@
         const names = [d.cT, d.wT, d.hT, d.aT];
         chartConfigs.forEach((conf, idx) => {
             const savedType = localStorage.getItem(`def_type_${conf.id}`) || conf.def;
-            html += `<div class="chart-card" id="card-${conf.id}"><div class="chart-header"><div style="font-weight:bold;">${names[idx]}</div><div style="display:flex; gap:10px;"><select id="type-${conf.id}" onchange="renderModule(${conf.id})"><option value="bar" ${savedType==='bar'?'selected':''}>Bar</option><option value="line" ${savedType==='line'?'selected':''}>Line</option><option value="area" ${savedType==='area'?'selected':''}>Area</option><option value="stepped" ${savedType==='stepped'?'selected':''}>Stepped</option><option value="radar" ${savedType==='radar'?'selected':''}>Radar</option></select><button class="btn-copy" onclick="copyChart('card-${conf.id}')">📷</button></div></div><div class="chart-container"><canvas id="canvas-${conf.id}"></canvas></div><div id="box-${conf.id}" class="stat-grid-mini"></div></div>`;
+            html += `<div class="chart-card" id="card-${conf.id}"><div class="chart-header"><div style="font-weight:bold;">${names[idx]}</div><select id="type-${conf.id}" onchange="renderModule(${conf.id})"><option value="bar" ${savedType==='bar'?'selected':''}>Bar</option><option value="line" ${savedType==='line'?'selected':''}>Line</option><option value="area" ${savedType==='area'?'selected':''}>Area</option><option value="stepped" ${savedType==='stepped'?'selected':''}>Stepped</option><option value="radar" ${savedType==='radar'?'selected':''}>Radar</option></select></div><div class="chart-container"><canvas id="canvas-${conf.id}"></canvas></div><div id="box-${conf.id}" class="stat-grid-mini"></div></div>`;
             setHtml += `<div class="set-item"><label>${names[idx]}</label><select id="set-type-${conf.id}" style="width:100%;"><option value="bar" ${savedType==='bar'?'selected':''}>Bar</option><option value="line" ${savedType==='line'?'selected':''}>Line</option><option value="area" ${savedType==='area'?'selected':''}>Area</option><option value="stepped" ${savedType==='stepped'?'selected':''}>Stepped</option><option value="radar" ${savedType==='radar'?'selected':''}>Radar</option></select></div>`;
         });
         document.getElementById('dynamic-charts').innerHTML = html;
@@ -163,11 +166,12 @@
         const filter = document.getElementById('mat-filter').value.toLowerCase();
         lastDayMap = {}; lastMatStats = {}; gFlow = Array(24).fill(0);
         for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) lastDayMap[d.toISOString().split('T')[0]] = { tons: 0, hours: 0, counts: 0 };
+        
         rawData.forEach(r => {
             const m = r.arrivalTime?.match(/(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})/);
             if (m) {
                 const dObj = new Date(m[3], m[2]-1, m[1], m[4], m[5]);
-                const mat = r.formNo;
+                const mat = r.matName;
                 if (!lastMatStats[mat]) lastMatStats[mat] = { counts:0, tons:0 };
                 lastMatStats[mat].counts++; lastMatStats[mat].tons += r.weight/1000;
                 const dKey = dObj.toISOString().split('T')[0];
@@ -188,7 +192,8 @@
         const source = document.getElementById('source-0').value;
         const l = document.getElementById('ui-lang').value;
         if (charts[0]) charts[0].destroy();
-        let items = Object.keys(lastMatStats).map(k => ({ label: k, value: lastMatStats[k][source] })).sort((a,b) => b.value - a.value).slice(0, 10);
+        // 刪除 N/A 或空值在柏拉圖中 (已過濾)
+        let items = Object.keys(lastMatStats).filter(k => k !== "N/A" && k !== "").map(k => ({ label: k, value: lastMatStats[k][source] })).sort((a,b) => b.value - a.value).slice(0, 10);
         const total = Math.round(items.reduce((a,b)=>a+b.value, 0));
         document.getElementById('pareto-total').innerText = `∑ ${i18n[l].total}: ${total}${source==='tons'?' T':''}`;
         let acc = 0; const pLine = items.map(i => { acc+=i.value; return (acc/items.reduce((x,y)=>x+y.value,0))*100; });
@@ -233,24 +238,40 @@
             const isDone = i.endTime && i.endTime.trim() !== "";
             const per = Math.min((i.totalTime / base) * 100, 100);
             let kpi = isDone ? `✅ ${d.monRate}: ${Math.round((base/i.totalTime)*100)}%` : (i.totalTime > base ? `🚨 ${d.monRate}: ${Math.round((base/i.totalTime)*100)}%` : `⏳ ${Math.round(base-i.totalTime)}m`);
-            return `<div class="progress-card"><div class="progress-info"><span>${i.formNo}</span><span>${i.totalTime}m</span></div><div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${per}%; background:${isDone?'#4CAF50':(i.totalTime>base?'#ef4444':'#2196F3')}"></div></div><div class="kpi-row"><span>${d.monBase}: ${base}m</span><span style="font-weight:bold;">${kpi}</span></div></div>`;
+            return `<div class="progress-card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;"><span class="truck-no">${i.truckNo}</span><span style="font-size:0.75rem; color:#aaa;">${i.arrivalTime.split(' ')[1]}</span></div>
+                <div class="progress-info"><span>${i.matName}</span><span>${i.totalTime}m</span></div>
+                <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${per}%; background:${isDone?'#4CAF50':(i.totalTime>base?'#ef4444':'#2196F3')}"></div></div>
+                <div class="kpi-row"><span>${d.monBase}: ${base}m</span><span style="font-weight:bold;">${kpi}</span></div>
+            </div>`;
         }).join('');
     }
 
     function updateAnalysis(idx) {
         const d = i18n[document.getElementById('ui-lang').value];
+        const days = lastLabels.length || 1;
         const totalC = lastLabels.reduce((a, k) => a + lastDayMap[k].counts, 0);
         const totalT = lastLabels.reduce((a, k) => a + lastDayMap[k].tons, 0);
         const totalH = lastLabels.reduce((a, k) => a + lastDayMap[k].hours, 0);
         const box = document.getElementById(`box-${idx}`);
-        if(box) box.innerHTML = `<div><small>${d.l1}</small><div class="stat-num">${totalC}</div></div><div><small>${d.l2}</small><div class="stat-num">${totalC>0?Math.round(totalH/totalC):0}m</div></div><div><small>${d.l3}</small><div class="stat-num">${Math.round(totalT)}T</div></div><div><small>${d.l4}</small><div class="stat-num">${Math.round(totalH)}m</div></div>`;
+        if(!box) return;
+        
+        let avgLabel = d.l2_3, avgVal = totalC>0?Math.round(totalH/totalC):0;
+        if(idx===1) { avgLabel = d.l2_1; avgVal = (totalC/days).toFixed(1); }
+        if(idx===2) { avgLabel = d.l2_2; avgVal = (totalT/days).toFixed(1) + 'T'; }
+        if(idx===4) { 
+            avgLabel = d.l2_4; 
+            const peaks = gFlow.map((v,i) => v > 0 ? i : -1).filter(i => i !== -1);
+            avgVal = peaks.length ? `${Math.min(...peaks)}h-${Math.max(...peaks)}h` : "-";
+        }
+
+        box.innerHTML = `<div><small>${d.l1}</small><div class="stat-num">${totalC}</div></div><div><small>${avgLabel}</small><div class="stat-num">${avgVal}${idx===3?'m':''}</div></div><div><small>${d.l3}</small><div class="stat-num">${Math.round(totalT)}T</div></div><div><small>${d.l4}</small><div class="stat-num">${Math.round(totalH)}m</div></div>`;
     }
 
     function startAutoRefresh() {
         if (refreshTimer) clearInterval(refreshTimer);
         const rate = parseInt(localStorage.getItem('set_refresh_rate') || '600');
-        if (rate <= 0) return;
-        countdown = rate;
+        if (rate <= 0) return; countdown = rate;
         refreshTimer = setInterval(async () => {
             countdown--; const l = document.getElementById('ui-lang').value;
             document.getElementById('refresh-timer').innerText = `🔄 ${countdown}${i18n[l].refSec}`;
@@ -266,7 +287,7 @@
         location.reload();
     }
     function updateMatDatalist() {
-        const mats = [...new Set(rawData.map(r => r.formNo))].sort();
+        const mats = [...new Set(rawData.map(r => r.matName))].sort();
         document.getElementById('mat-list').innerHTML = mats.map(m => `<option value="${m}">`).join('');
     }
     function changeLanguage() { initUI(); if(rawData.length>0) generateReport(); }
