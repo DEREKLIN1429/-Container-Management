@@ -3,99 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>原管貨櫃管理報表 v2.7.4</title>
+    <title>原管貨櫃管理報表 v3.0</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <style>
         :root { --primary: #2196F3; --success: #4CAF50; --bg: #f0f2f5; --white: #ffffff; --text: #1e293b; --border: #e2e8f0; --accent: #0f172a; --warning: #f59e0b; }
-        body { font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--text); }
+        body { font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text); }
         .container { max-width: 1400px; margin: 0 auto; width: 100%; }
         
-        /* 今日監控加大 */
-        .today-monitor { background: var(--accent); color: white; padding: 25px; border-radius: 20px; margin-bottom: 25px; box-shadow: 0 10px 20px rgba(0,0,0,0.2); min-height: 350px; }
-        .monitor-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .monitor-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
-        .progress-card { background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); }
-        .progress-info { display: flex; justify-content: space-between; font-size: 1rem; margin-bottom: 10px; }
-        .progress-bar-bg { background: rgba(255,255,255,0.2); height: 12px; border-radius: 6px; overflow: hidden; }
+        .header-main { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 25px; border-bottom: 3px solid var(--accent); padding-bottom: 10px; }
+        .header-title { font-size: 2.2rem; font-weight: 900; color: var(--accent); margin: 0; }
+
+        .today-monitor { background: var(--accent); color: white; padding: 25px; border-radius: 20px; margin-bottom: 25px; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+        .monitor-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+        .monitor-scroll-area { max-height: 400px; overflow-y: auto; padding-right: 10px; }
+        .monitor-scroll-area::-webkit-scrollbar { width: 8px; }
+        .monitor-scroll-area::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+
+        .monitor-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
+        .progress-card { background: rgba(255,255,255,0.1); padding: 18px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); }
+        .progress-info { display: flex; justify-content: space-between; font-size: 0.95rem; margin-bottom: 8px; }
+        .progress-bar-bg { background: rgba(255,255,255,0.2); height: 10px; border-radius: 5px; overflow: hidden; }
         .progress-bar-fill { height: 100%; transition: width 0.5s; }
 
-        /* 設定面板 */
         #settings-panel { position: fixed; top: 0; right: -450px; width: 350px; height: 100%; background: var(--white); box-shadow: -10px 0 30px rgba(0,0,0,0.1); z-index: 2000; transition: 0.4s; padding: 25px; overflow-y: auto; }
         #settings-panel.active { right: 0; }
-        .set-item { margin-bottom: 20px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px; }
-        .set-item label { display: block; font-weight: bold; font-size: 0.85rem; margin-bottom: 8px; color: #64748b; }
+        .set-item { margin-bottom: 15px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; }
+        .set-item label { font-weight: bold; font-size: 0.85rem; color: #64748b; display: block; margin-bottom: 5px; }
 
-        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
-        .top-controls { display: flex; gap: 10px; align-items: center; }
+        .filter-card { background: white; padding: 20px; border-radius: 15px; margin-bottom: 25px; display: flex; gap: 15px; flex-wrap: wrap; box-shadow: 0 4px 10px rgba(0,0,0,0.05); align-items: flex-end; }
+        .filter-group { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 180px; }
         
-        .filter-card { background: white; padding: 20px; border-radius: 15px; margin-bottom: 25px; display: flex; gap: 10px; flex-wrap: wrap; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .chart-card { background: var(--white); padding: 25px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); margin-bottom: 35px; border: 1px solid var(--border); }
-        .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #f8fafc; padding-bottom: 12px; }
-        .chart-container { height: 400px; width: 100%; position: relative; }
-        .stat-grid-mini { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 15px; padding: 15px; background: #f8fafc; border-radius: 12px; }
-        .stat-num { font-weight: 900; color: var(--primary); font-size: 1.3rem; }
+        .chart-card { background: var(--white); padding: 25px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); margin-bottom: 30px; border: 1px solid var(--border); }
+        .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .chart-container { height: 380px; width: 100%; position: relative; }
         
-        .btn-run { padding: 10px 25px; background: #0f172a; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; }
-        select, input[type="date"], input[type="text"] { padding: 10px; border-radius: 10px; border: 1px solid #ddd; }
-
-        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .btn-copy { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 8px; padding: 5px 12px; cursor: pointer; font-size: 0.8rem; }
+        .stat-grid-mini { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 15px; padding: 15px; background: #f8fafc; border-radius: 12px; }
+        .stat-num { font-weight: 800; color: var(--primary); font-size: 1.2rem; }
+        .btn-run { padding: 12px 35px; background: var(--accent); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; }
+        
+        select, input { padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; }
+        #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 10px 25px; border-radius: 50px; display: none; z-index: 9999; }
+        
         @media (min-width: 768px) { .stat-grid-mini { grid-template-columns: repeat(4, 1fr); } }
     </style>
 </head>
 <body>
 
-    <div id="loading" style="position:fixed; top:0; left:0; width:100%; height:100%; background:white; display:none; flex-direction:column; align-items:center; justify-content:center; z-index:5000;">
-        <div style="border:6px solid #f3f3f3; border-top:6px solid #2196F3; border-radius:50%; width:50px; height:50px; animation:spin 1s linear infinite;"></div>
+    <div id="loading" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); display:none; flex-direction:column; align-items:center; justify-content:center; z-index:5000;">
+        <div style="border:5px solid #f3f3f3; border-top:5px solid #2196F3; border-radius:50%; width:45px; height:45px; animation:spin 1s linear infinite;"></div>
     </div>
+
+    <div id="toast">✅ 已成功複製圖表圖片</div>
 
     <div id="settings-panel">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h3>⚙️ 系統進階設定</h3>
+            <h3 id="set-panel-title">⚙️ 報表進階設定</h3>
             <button onclick="toggleSettings()" style="border:none; background:none; font-size:1.8rem; cursor:pointer;">&times;</button>
         </div>
+        <div id="settings-list"></div>
         <div class="set-item">
-            <label>🎨 全域圖表主色調</label>
-            <input type="color" id="set-global-color" style="width:100%; height:40px; border-radius:8px;">
+            <label id="set-color-lbl">🎨 主色調</label>
+            <input type="color" id="set-global-color" style="width:100%; height:35px;">
         </div>
-        <button class="btn-run" style="width:100%;" onclick="saveSettings()">儲存並更新</button>
+        <button class="btn-run" style="width:100%;" onclick="saveSettings()" id="set-save-btn">儲存並重新整理</button>
     </div>
 
     <div class="container">
-        <div class="today-monitor">
-            <div class="monitor-header">
-                <h2 id="mon-title" style="margin:0; font-size:1.4rem;">🚚 今日貨櫃進場動態 (07:00-07:00)</h2>
-                <div id="monitor-count" style="font-size:1.1rem; font-weight:bold;">載入中...</div>
-            </div>
-            <div id="monitor-list" class="monitor-grid"></div>
-        </div>
-
-        <div class="top-bar">
-            <h1 id="main-title" style="font-weight: 900; font-size: 1.6rem; margin:0;">原管貨櫃管理報表 v2.7.4</h1>
-            <div class="top-controls">
-                <select id="ui-lang" onchange="changeLanguage()" style="font-weight:bold;">
+        <header class="header-main">
+            <h1 class="header-title" id="main-title">原管貨櫃管理報表 v3.0</h1>
+            <div class="top-controls" style="display:flex; gap:10px;">
+                <select id="ui-lang" onchange="changeLanguage()">
                     <option value="zh">繁體中文</option>
                     <option value="en">English</option>
+                    <option value="hi">हिन्दी (Hindi)</option>
                 </select>
-                <button onclick="toggleSettings()" style="padding:10px 20px; border-radius:10px; border:1px solid #ddd; background:white; cursor:pointer; font-weight:bold;">⚙️ 設定</button>
+                <button onclick="toggleSettings()" id="btn-set-open" style="padding:8px 15px; border-radius:8px; cursor:pointer;">⚙️ 設定</button>
+            </div>
+        </header>
+
+        <div class="today-monitor">
+            <div class="monitor-header">
+                <div style="display:flex; align-items:center; gap:15px;">
+                    <h2 id="mon-title" style="margin:0; font-size:1.3rem;">🚚 今日貨櫃進場動態 (07:00-07:00)</h2>
+                    <input type="date" id="mon-date" onchange="renderTodayMonitor()" style="background:rgba(255,255,255,0.1); color:white; border:1px solid rgba(255,255,255,0.3); padding:5px 10px;">
+                </div>
+                <div id="monitor-count" style="font-weight:bold; background:rgba(255,255,255,0.1); padding:4px 12px; border-radius:20px;">載入中...</div>
+            </div>
+            <div class="monitor-scroll-area">
+                <div id="monitor-list" class="monitor-grid"></div>
             </div>
         </div>
 
         <div class="filter-card">
-            <input type="date" id="date-start">
-            <input type="date" id="date-end">
-            <input type="text" id="mat-filter" placeholder="搜尋貨單編號/物料...">
-            <button class="btn-run" onclick="generateReport()">更新數據</button>
+            <div class="filter-group"><label id="lbl-start">📅 起始日期</label><input type="date" id="date-start"></div>
+            <div class="filter-group"><label id="lbl-end">📅 結束日期</label><input type="date" id="date-end"></div>
+            <div class="filter-group">
+                <label id="lbl-mat">🔍 原材料搜尋</label>
+                <input type="text" id="mat-filter" list="mat-list" placeholder="...">
+                <datalist id="mat-list"></datalist>
+            </div>
+            <button class="btn-run" onclick="generateReport()" id="btn-update">更新數據</button>
         </div>
 
         <div id="card-0" class="chart-card">
             <div class="chart-header">
-                <div id="tit-pareto" style="font-weight:bold;">📊 柏拉圖：物料入廠佔比分析</div>
-                <select id="source-0" onchange="generateReport()">
-                    <option value="tons">以噸數計</option>
-                    <option value="counts">以次數計</option>
-                </select>
+                <div style="font-weight:bold;" id="tit-pareto">📊 柏拉圖分析：物料入廠佔比</div>
+                <div style="display:flex; gap:10px;">
+                    <select id="source-0" onchange="generateReport()">
+                        <option value="tons" id="opt-tons">以噸數計</option>
+                        <option value="counts" id="opt-counts">以次數計</option>
+                    </select>
+                    <button class="btn-copy" onclick="copyChart('card-0')">📷</button>
+                </div>
             </div>
             <div class="chart-container"><canvas id="canvas-0"></canvas></div>
         </div>
@@ -108,36 +130,83 @@
     const PUB_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQjY5PdR1CTA2gcvbeIPSFYflT2WHKWxELGliEG8c-fcCm9KlpTBlTbUIMDTCH1SieAITuY02SS65ic/pub?gid=0&single=true&output=csv";
     
     const i18n = {
-        zh: { title: "原管貨櫃管理報表 v2.7.4", monitor: "🚚 今日貨櫃進場動態 (07:00-07:00)", pareto: "📊 柏拉圖：物料入廠佔比分析", cT: "📦 貨櫃入廠頻次趨勢", wT: "⚖️ 每日載重總量分析", hT: "⏱️ 每日貨櫃卸貨時間統計(Min)", aT: "🔥 24H 貨櫃流量分佈", l1: "總車次", l2: "平均效率", l3: "總重量", l4: "總工時" },
-        en: { title: "Container Report v2.7.4", monitor: "🚚 Today's Container Status (07:00-07:00)", pareto: "📊 Pareto Analysis", cT: "📦 Frequency Trend", wT: "⚖️ Daily Tonnage", hT: "⏱️ Daily Unloading Time (Min)", aT: "🔥 24H Flow", l1: "Total Units", l2: "Avg Eff", l3: "Total Weight", l4: "Total Hours" }
+        zh: { title: "原管貨櫃管理報表 v3.0", mon: "🚚 今日貨櫃進場動態 (07:00-07:00)", monCount: "選定日累計", start: "📅 起始日期", end: "📅 結束日期", mat: "🔍 原材料搜尋", update: "更新數據", pareto: "📊 柏拉圖分析：物料入廠佔比", optT: "以噸數計", optC: "以次數計", cT: "📦 貨櫃入廠頻次趨勢", wT: "⚖️ 每日載重總量分析", hT: "⏱️ 每日貨櫃卸貨時間統計(Min)", aT: "🔥 24H 貨櫃流量分佈", l1: "總車次", l2: "平均效率", l3: "總重量", l4: "總工時", setT: "⚙️ 報表進階設定", setS: "儲存並重新整理", copy: "✅ 已成功複製圖表圖片" },
+        en: { title: "Container Report v3.0", mon: "🚚 Container Status (07:00-07:00)", monCount: "Daily Total", start: "📅 Start Date", end: "📅 End Date", mat: "🔍 Search Materials", update: "Update", pareto: "📊 Pareto: Material Ratio", optT: "By Tonnage", optC: "By Counts", cT: "📦 Frequency Trend", wT: "⚖️ Daily Tonnage", hT: "⏱️ Daily Efficiency (Min)", aT: "🔥 24H Flow", l1: "Total Units", l2: "Avg Eff", l3: "Weight", l4: "Hours", setT: "⚙️ Advanced Settings", setS: "Save & Refresh", copy: "✅ Image Copied" },
+        hi: { title: "कंटेनर रिपोर्ट v3.0", mon: "🚚 आज का कंटेनर प्रवाह (07:00-07:00)", monCount: "दैनिक कुल", start: "📅 प्रारंभ तिथि", end: "📅 अंतिम तिथि", mat: "🔍 सामग्री खोजें", update: "अपडेट करें", pareto: "📊 पारेतो: सामग्री अनुपात", optT: "वजन के अनुसार", optC: "संख्या के अनुसार", cT: "📦 आगमन आवृत्ति", wT: "⚖️ दैनिक वजन", hT: "⏱️ दैनिक कार्य कुशलता", aT: "🔥 24H प्रवाह", l1: "कुल इकाइयां", l2: "औसत समय", l3: "कुल वजन", l4: "कुल घंटे", setT: "⚙️ उन्नत सेटिंग्स", setS: "सहेजें और रिफ्रेश करें", copy: "✅ कॉपी हो गया" }
     };
 
     let rawData = [], charts = {}, lastLabels = [], lastDayMap = {}, lastHFlow = [], lastMatStats = {};
-    const chartConfigs = [{id:1, key:"counts"}, {id:2, key:"tons"}, {id:3, key:"hours"}, {id:4, key:"flow"}];
+    const chartConfigs = [{id:1, key:"counts", def:"bar"}, {id:2, key:"tons", def:"area"}, {id:3, key:"hours", def:"stepped"}, {id:4, key:"flow", def:"stepped"}];
 
     window.onload = async () => {
         const now = new Date();
         document.getElementById('date-start').value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
         document.getElementById('date-end').value = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+        document.getElementById('mon-date').value = now.toISOString().split('T')[0];
         document.getElementById('set-global-color').value = localStorage.getItem('set_global_color') || '#2196F3';
-        changeLanguage(); // 初始化 UI 名稱
+        changeLanguage();
         await fetchPublishedData();
     };
-
-    function toggleSettings() { document.getElementById('settings-panel').classList.toggle('active'); }
-    function saveSettings() {
-        localStorage.setItem('set_global_color', document.getElementById('set-global-color').value);
-        toggleSettings(); generateReport();
-    }
 
     function changeLanguage() {
         const l = document.getElementById('ui-lang').value;
         const d = i18n[l];
         document.getElementById('main-title').innerText = d.title;
-        document.getElementById('mon-title').innerText = d.monitor;
+        document.getElementById('mon-title').innerText = d.mon;
+        document.getElementById('lbl-start').innerText = d.start;
+        document.getElementById('lbl-end').innerText = d.end;
+        document.getElementById('lbl-mat').innerText = d.mat;
+        document.getElementById('btn-update').innerText = d.update;
         document.getElementById('tit-pareto').innerText = d.pareto;
-        initDynamicUI(); // 重新生成圖表容器以更新標題
-        if(rawData.length > 0) generateReport();
+        document.getElementById('opt-tons').innerText = d.optT;
+        document.getElementById('opt-counts').innerText = d.optC;
+        document.getElementById('set-panel-title').innerText = d.setT;
+        document.getElementById('set-save-btn').innerText = d.setS;
+        initUI();
+        if(rawData.length > 0) {
+            generateReport();
+            renderTodayMonitor();
+        }
+    }
+
+    function initUI() {
+        const l = document.getElementById('ui-lang').value;
+        const d = i18n[l];
+        const names = [d.cT, d.wT, d.hT, d.aT];
+        let html = '', setHtml = '';
+        chartConfigs.forEach((conf, idx) => {
+            const savedType = localStorage.getItem(`def_type_${conf.id}`) || conf.def;
+            html += `
+                <div class="chart-card" id="card-${conf.id}">
+                    <div class="chart-header">
+                        <div style="font-weight:bold;">${names[idx]}</div>
+                        <div style="display:flex; gap:10px;">
+                            <select id="type-${conf.id}" onchange="renderModule(${conf.id})">
+                                <option value="bar" ${savedType==='bar'?'selected':''}>Bar</option>
+                                <option value="line" ${savedType==='line'?'selected':''}>Line</option>
+                                <option value="area" ${savedType==='area'?'selected':''}>Area</option>
+                                <option value="stepped" ${savedType==='stepped'?'selected':''}>Stepped</option>
+                                <option value="radar" ${savedType==='radar'?'selected':''}>Radar</option>
+                            </select>
+                            <button class="btn-copy" onclick="copyChart('card-${conf.id}')">📷</button>
+                        </div>
+                    </div>
+                    <div class="chart-container"><canvas id="canvas-${conf.id}"></canvas></div>
+                    <div id="box-${conf.id}"></div>
+                </div>`;
+            setHtml += `
+                <div class="set-item">
+                    <label>${names[idx]}</label>
+                    <select id="set-type-${conf.id}" style="width:100%;">
+                        <option value="bar" ${savedType==='bar'?'selected':''}>Bar</option>
+                        <option value="line" ${savedType==='line'?'selected':''}>Line</option>
+                        <option value="area" ${savedType==='area'?'selected':''}>Area</option>
+                        <option value="stepped" ${savedType==='stepped'?'selected':''}>Stepped</option>
+                    </select>
+                </div>`;
+        });
+        document.getElementById('dynamic-charts').innerHTML = html;
+        document.getElementById('settings-list').innerHTML = setHtml;
     }
 
     async function fetchPublishedData() {
@@ -146,6 +215,7 @@
             const res = await fetch(PUB_URL);
             const text = await res.text();
             rawData = parseCSV(text);
+            updateMatDatalist();
             generateReport();
             renderTodayMonitor();
         } catch (e) { console.error(e); }
@@ -159,24 +229,9 @@
         }).filter(x => x);
     }
 
-    function initDynamicUI() {
-        const l = document.getElementById('ui-lang').value;
-        const names = [i18n[l].cT, i18n[l].wT, i18n[l].hT, i18n[l].aT];
-        let html = '';
-        chartConfigs.forEach((conf, idx) => {
-            html += `
-                <div class="chart-card">
-                    <div class="chart-header">
-                        <div style="font-weight:bold;">${names[idx]}</div>
-                        <select id="type-${conf.id}" onchange="renderModule(${conf.id})">
-                            <option value="bar">Bar</option><option value="line">Line</option><option value="area">Area</option><option value="stepped">Stepped</option><option value="radar">Radar</option>
-                        </select>
-                    </div>
-                    <div class="chart-container"><canvas id="canvas-${conf.id}"></canvas></div>
-                    <div id="box-${conf.id}"></div>
-                </div>`;
-        });
-        document.getElementById('dynamic-charts').innerHTML = html;
+    function updateMatDatalist() {
+        const mats = [...new Set(rawData.map(r => r.formNo).filter(Boolean))].sort();
+        document.getElementById('mat-list').innerHTML = mats.map(m => `<option value="${m}">`).join('');
     }
 
     function generateReport() {
@@ -193,12 +248,12 @@
             const m = r.startTime?.match(/(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})/);
             if (m) {
                 const dObj = new Date(m[3], m[2]-1, m[1], m[4], m[5]);
+                const mat = r.formNo || "Unknown";
                 if (dObj >= start && dObj <= end) {
-                    const dKey = dObj.toISOString().split('T')[0];
-                    const mat = r.formNo || "Unknown";
                     if (!lastMatStats[mat]) lastMatStats[mat] = { counts: 0, tons: 0 };
                     lastMatStats[mat].counts++;
                     lastMatStats[mat].tons += (parseFloat(r.weight) || 0) / 1000;
+                    const dKey = dObj.toISOString().split('T')[0];
                     if (lastDayMap[dKey] && (!filter || mat.toLowerCase().includes(filter))) {
                         lastDayMap[dKey].counts++;
                         lastDayMap[dKey].tons += (parseFloat(r.weight) || 0) / 1000;
@@ -213,76 +268,44 @@
         chartConfigs.forEach(conf => renderModule(conf.id));
     }
 
-    function renderPareto() {
-        const canvas = document.getElementById('canvas-0');
-        const source = document.getElementById('source-0').value;
-        if (charts[0]) charts[0].destroy();
-        let items = Object.keys(lastMatStats).map(k => ({ label: k, value: lastMatStats[k][source] })).sort((a,b)=>b.value-a.value).slice(0, 10);
-        const total = items.reduce((a,b)=>a+b.value, 0);
-        let acc = 0;
-        const paretoData = items.map(i => { acc+=i.value; return (acc/total)*100; });
-        charts[0] = new Chart(canvas.getContext('2d'), {
-            type: 'bar',
-            data: {
-                labels: items.map(i=>i.label),
-                datasets: [
-                    { data: items.map(i=>i.value), backgroundColor: localStorage.getItem('set_global_color') || '#2196F3', yAxisID: 'y' },
-                    { data: paretoData, type: 'line', borderColor: '#ef4444', yAxisID: 'y1' }
-                ]
-            },
-            options: { 
-                responsive: true, maintainAspectRatio: false,
-                plugins: { datalabels: { display: 'auto', anchor: 'end', align: 'top', formatter: v => Math.round(v) } }
-            }
-        });
-    }
-
     function renderModule(idx) {
         const canvas = document.getElementById(`canvas-${idx}`);
-        const typeSelect = document.getElementById(`type-${idx}`).value;
+        if (!canvas) return;
+        const type = document.getElementById(`type-${idx}`).value;
         const conf = chartConfigs.find(c => c.id === idx);
         if (charts[idx]) charts[idx].destroy();
         const color = idx === 1 ? '#10b981' : (idx === 2 ? (localStorage.getItem('set_global_color')||'#2196F3') : (idx === 3 ? '#f59e0b' : '#8b5cf6'));
         let labels = (idx === 4) ? Array.from({length:24}, (_,i)=>i+'h') : lastLabels;
         let data = (idx === 4) ? lastHFlow : labels.map(l => lastDayMap[l][conf.key]);
-        
         charts[idx] = new Chart(canvas.getContext('2d'), {
-            type: typeSelect === 'stepped' || typeSelect === 'area' ? 'line' : typeSelect,
-            data: {
-                labels: labels,
-                datasets: [{ 
-                    data: data, borderColor: color, stepped: typeSelect === 'stepped', fill: typeSelect === 'area',
-                    backgroundColor: typeSelect === 'bar' ? color : color + '33'
-                }]
-            },
-            options: { 
-                responsive: true, maintainAspectRatio: false,
-                plugins: { datalabels: { display: 'auto', anchor: 'end', align: 'top', formatter: v => Math.round(v) } }
-            }
+            type: type === 'stepped' || type === 'area' ? 'line' : type,
+            data: { labels: labels, datasets: [{ data: data, borderColor: color, stepped: type === 'stepped', fill: type === 'area', backgroundColor: type === 'bar' ? color : color + '33', tension: 0.4 }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: 'auto', anchor: 'end', align: 'top', formatter: v => Math.round(v) }, legend: { display: false } } }
         });
         updateAnalysis(idx);
     }
 
     function renderTodayMonitor() {
-        const now = new Date();
-        let start = new Date(); start.setHours(7,0,0,0);
-        if(now.getHours() < 7) start.setDate(start.getDate()-1);
+        const l = document.getElementById('ui-lang').value;
+        const dLang = i18n[l];
+        const selDate = new Date(document.getElementById('mon-date').value);
+        let start = new Date(selDate); start.setHours(7,0,0,0);
         let end = new Date(start); end.setDate(end.getDate()+1);
+
         const items = rawData.filter(r => {
             const m = r.startTime?.match(/(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})/);
             if(!m) return false;
             const d = new Date(m[3], m[2]-1, m[1], m[4], m[5]);
             return d >= start && d < end;
         });
-        document.getElementById('monitor-count').innerText = `今日累計: ${items.length} 台`;
+
+        document.getElementById('monitor-count').innerText = `${dLang.monCount}: ${items.length}`;
         document.getElementById('monitor-list').innerHTML = items.map(i => {
-            const v = parseFloat(i.totalTime) || 0;
+            const v = Math.round(parseFloat(i.totalTime)) || 0;
             const per = Math.min((v/60)*100, 100);
-            return `<div class="progress-card">
-                        <div class="progress-info"><strong>${i.formNo}</strong><span>${v}m</span></div>
-                        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${per}%; background:${v>60?'#ef4444':v>40?'#f59e0b':'#10b981'}"></div></div>
-                    </div>`;
-        }).join('') || '<div style="color:gray">目前無進場資料</div>';
+            return `<div class="progress-card"><div class="progress-info"><strong>${i.formNo}</strong><span>${v}m</span></div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${per}%; background:${v>60?'#ef4444':v>40?'#f59e0b':'#4CAF50'}"></div></div></div>`;
+        }).join('') || `<div style="color:gray; padding:20px;">...</div>`;
     }
 
     function updateAnalysis(idx) {
@@ -298,6 +321,55 @@
             <div><small>${d.l2}</small><div class="stat-num">${totalC>0?Math.round(totalH/totalC):0}m</div></div>
             <div><small>${d.l3}</small><div class="stat-num">${Math.round(totalT)}T</div></div>
             <div><small>${d.l4}</small><div class="stat-num">${Math.round(totalH)}m</div></div></div>`;
+    }
+
+    function renderPareto() {
+        const canvas = document.getElementById('canvas-0');
+        const source = document.getElementById('source-0').value;
+        if (charts[0]) charts[0].destroy();
+        let items = Object.keys(lastMatStats).map(k => ({ label: k, value: lastMatStats[k][source] })).sort((a,b)=>b.value-a.value).slice(0, 10);
+        const total = items.reduce((a,b)=>a+b.value, 0);
+        let acc = 0;
+        const paretoData = items.map(i => { acc+=i.value; return (acc/total)*100; });
+        charts[0] = new Chart(canvas.getContext('2d'), {
+            type: 'bar',
+            data: { labels: items.map(i=>i.label), datasets: [{ data: items.map(i=>i.value), backgroundColor: localStorage.getItem('set_global_color') || '#2196F3', yAxisID: 'y' }, { data: paretoData, type: 'line', borderColor: '#ef4444', yAxisID: 'y1', pointRadius: 4 }] },
+            options: { 
+                responsive: true, maintainAspectRatio: false, 
+                plugins: { datalabels: { display: 'auto', anchor: 'end', align: 'top', formatter: v => Math.round(v) } },
+                scales: { 
+                    y: { beginAtZero: true }, 
+                    y1: { 
+                        position: 'right', 
+                        max: 100, 
+                        grid: { 
+                            drawOnChartArea: true, // 顯示百分比軸格線
+                            color: 'rgba(239, 68, 68, 0.1)', // 紅色淡格線
+                            borderDash: [5, 5] // 虛線
+                        },
+                        ticks: { color: '#ef4444' }
+                    } 
+                }
+            }
+        });
+    }
+
+    function toggleSettings() { document.getElementById('settings-panel').classList.toggle('active'); }
+    function saveSettings() {
+        localStorage.setItem('set_global_color', document.getElementById('set-global-color').value);
+        chartConfigs.forEach(conf => localStorage.setItem(`def_type_${conf.id}`, document.getElementById(`set-type-${conf.id}`).value));
+        location.reload(); 
+    }
+    async function copyChart(id) {
+        const el = document.getElementById(id);
+        const l = document.getElementById('ui-lang').value;
+        const canvas = await html2canvas(el, { scale: 2, backgroundColor: '#f0f2f5' });
+        canvas.toBlob(async b => {
+            await navigator.clipboard.write([new ClipboardItem({"image/png": b})]);
+            const t = document.getElementById('toast');
+            t.innerText = i18n[l].copy;
+            t.style.display = 'block'; setTimeout(()=>t.style.display='none', 2000);
+        });
     }
 </script>
 </body>
