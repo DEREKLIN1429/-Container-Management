@@ -9,9 +9,9 @@
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <style>
         :root { --primary: #2196F3; --success: #4CAF50; --bg: #f0f2f5; --white: #ffffff; --text: #1e293b; --border: #e2e8f0; --accent: #0f172a; --danger: #ef4444; }
-        body { font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text); padding-top: 50px; } /* 留出上方計時器空間 */
+        body { font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text); padding-top: 50px; }
         
-        /* 倒數計時器置頂居中 */
+        /* 倒數計時器：置頂居中 */
         #refresh-timer { 
             position: fixed; top: 0; left: 50%; transform: translateX(-50%); 
             background: var(--accent); color: white; padding: 5px 20px; 
@@ -34,8 +34,6 @@
         .progress-bar-bg { background: rgba(255,255,255,0.2); height: 14px; border-radius: 7px; overflow: hidden; margin: 12px 0 8px 0; }
         .progress-bar-fill { height: 100%; transition: width 0.5s; }
         .kpi-formula { font-size: 1.1rem; font-weight: 900; font-family: 'Consolas', monospace; background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 8px; display: block; margin-top: 10px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
-        .pareto-stats-bar { display: flex; gap: 15px; margin-top: 5px; flex-wrap: wrap; }
-        .pareto-stat-item { font-size: 0.9rem; font-weight: 900; color: var(--primary); background: #f0f7ff; padding: 4px 12px; border-radius: 6px; border: 1px solid #d0e4ff; }
         .filter-row { background: white; padding: 20px; border-radius: 15px; margin-bottom: 25px; display: grid; grid-template-columns: repeat(3, 1fr) auto; gap: 15px; align-items: flex-end; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         .chart-card { background: var(--white); padding: 25px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); margin-bottom: 30px; border: 1px solid var(--border); }
         .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
@@ -52,7 +50,7 @@
 </head>
 <body>
 
-    <div id="refresh-timer">🔄 Initializing...</div>
+    <div id="refresh-timer">🔄 初始化中...</div>
 
     <div id="loading" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); display:none; flex-direction:column; align-items:center; justify-content:center; z-index:9999;">
         <div style="border:5px solid #f3f3f3; border-top:5px solid #2196F3; border-radius:50%; width:45px; height:45px; animation:spin 1s linear infinite;"></div>
@@ -64,7 +62,6 @@
         <div class="set-item"><label id="lbl-set-base">⏱️ Benchmark Time (Min)</label><input type="number" id="set-base-time" style="width:100%;"><small id="avg-hint" style="color:var(--primary); font-weight:bold;"></small></div>
         <div class="set-item"><label id="lbl-set-threshold">🚨 Warning Threshold (%)</label><input type="number" id="set-warn-threshold" style="width:100%;"></div>
         <div class="set-item"><label id="lbl-set-color">🎨 Warning Color</label><input type="color" id="set-warn-color" style="width:100%; height:40px;"></div>
-        <div id="settings-list"></div>
         <button class="btn-run" style="width:100%; margin-top:10px;" onclick="saveSettings()" id="set-save-btn">Save</button>
     </div>
 
@@ -79,18 +76,21 @@
 
         <div class="today-monitor">
             <div class="monitor-header">
-                <div style="display:flex; align-items:center; gap:15px;"><h2 id="mon-title">🚚 今日動態 (07:00-07:00)</h2><input type="date" id="mon-date" onchange="renderTodayMonitor()"></div>
+                <div style="display:flex; align-items:center; gap:15px;">
+                    <h2 id="mon-title">🚚 今日動態 (07:00-07:00)</h2>
+                    <input type="text" id="mon-date" onchange="renderTodayMonitor()" placeholder="DD/MM/YYYY" style="width:130px;">
+                </div>
                 <div style="display:flex; align-items:center; gap:15px;">
                     <div id="total-avg-rate" class="total-avg-kpi">Avg Rate: --%</div>
-                    <div style="text-align:right;"><div id="monitor-count-label">...</div></div>
+                    <div id="monitor-count-label">...</div>
                 </div>
             </div>
             <div class="monitor-grid" id="monitor-list"></div>
         </div>
 
         <div class="filter-row">
-            <div style="display:flex; flex-direction:column; gap:5px;"><label id="lbl-start">起始</label><input type="date" id="date-start"></div>
-            <div style="display:flex; flex-direction:column; gap:5px;"><label id="lbl-end">結束</label><input type="date" id="date-end"></div>
+            <div style="display:flex; flex-direction:column; gap:5px;"><label id="lbl-start">起始 (日/月/年)</label><input type="text" id="date-start" placeholder="DD/MM/YYYY"></div>
+            <div style="display:flex; flex-direction:column; gap:5px;"><label id="lbl-end">結束 (日/月/年)</label><input type="text" id="date-end" placeholder="DD/MM/YYYY"></div>
             <div style="display:flex; flex-direction:column; gap:5px;"><label id="lbl-mat">搜尋原材料</label><input type="text" id="mat-filter" list="mat-list" placeholder="輸入關鍵字..."><datalist id="mat-list"></datalist></div>
             <button class="btn-run" onclick="generateReport()" id="btn-update">更新</button>
         </div>
@@ -126,33 +126,38 @@
     let refreshTimer = null, countdown = 0;
     const chartConfigs = [{id:1, key:"counts", def:"bar"}, {id:2, key:"tons", def:"area"}, {id:3, key:"hours", def:"stepped"}, {id:4, key:"flow", def:"radar"}];
 
-    // 優化：智慧日期解析函式
+    // 優化：智慧日期解析 (支援 DD/MM/YYYY 與 YYYY-MM-DD)
     function smartParseDate(str) {
         if (!str) return null;
         let d;
-        // 1. 嘗試解析 DD/MM/YYYY HH:mm (原始格式)
-        const m1 = str.match(/(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})/);
-        if (m1) d = new Date(m1[3], m1[2] - 1, m1[1], m1[4], m1[5]);
-        
-        // 2. 嘗試解析 YYYY/MM/DD HH:mm (常見格式)
-        const m2 = str.match(/(\d{4})\/(\d{2})\/(\d{2}) (\d{2}):(\d{2})/);
-        if (!d && m2) d = new Date(m2[1], m2[2] - 1, m2[3], m2[4], m2[5]);
-
-        // 3. 原生解析 (處理 ISO YYYY-MM-DD 等)
+        // 處理 DD/MM/YYYY HH:mm
+        const m1 = str.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+        if (m1) {
+            const timePart = str.split(' ')[1] || "00:00";
+            const [hh, mm] = timePart.split(':');
+            d = new Date(m1[3], m1[2] - 1, m1[1], hh || 0, mm || 0);
+        }
+        // 如果上面失敗，嘗試標準解析 (ISO)
         if (!d || isNaN(d.getTime())) d = new Date(str);
-
         return (d && !isNaN(d.getTime())) ? d : null;
+    }
+
+    // 格式化日期為 DD/MM/YYYY
+    function formatDateToDMY(d) {
+        return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
     }
 
     window.onload = async () => {
         const now = new Date();
-        document.getElementById('date-start').value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-        document.getElementById('date-end').value = now.toISOString().split('T')[0];
-        document.getElementById('mon-date').value = now.toISOString().split('T')[0];
+        document.getElementById('date-start').value = formatDateToDMY(new Date(now.getFullYear(), now.getMonth(), 1));
+        document.getElementById('date-end').value = formatDateToDMY(now);
+        document.getElementById('mon-date').value = formatDateToDMY(now);
+        
         document.getElementById('set-refresh-rate').value = localStorage.getItem('set_refresh_rate') || '600';
         document.getElementById('set-base-time').value = localStorage.getItem('set_base_time') || '';
         document.getElementById('set-warn-threshold').value = localStorage.getItem('set_warn_threshold') || '95';
         document.getElementById('set-warn-color').value = localStorage.getItem('set_warn_color') || '#ef4444';
+        
         changeLanguage(); 
         await fetchPublishedData();
         startAutoRefresh();
@@ -179,18 +184,20 @@
     }
 
     function generateReport() {
-        const start = new Date(document.getElementById('date-start').value); start.setHours(0,0,0,0);
-        const end = new Date(document.getElementById('date-end').value); end.setHours(23,59,59,999);
+        const start = smartParseDate(document.getElementById('date-start').value); if(start) start.setHours(0,0,0,0);
+        const end = smartParseDate(document.getElementById('date-end').value); if(end) end.setHours(23,59,59,999);
         const filter = document.getElementById('mat-filter').value.toLowerCase();
         
         lastDayMap = {}; filteredMatStats = {}; gFlow = Array(24).fill(0); 
         totalRangeVolume = {tons:0, counts:0, hours:0};
 
-        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) lastDayMap[d.toISOString().split('T')[0]] = { tons: 0, hours: 0, counts: 0 };
+        if(start && end) {
+            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) lastDayMap[d.toISOString().split('T')[0]] = { tons: 0, hours: 0, counts: 0 };
+        }
         
         rawData.forEach(r => {
             const dObj = smartParseDate(r.arrivalTime);
-            if (dObj) {
+            if (dObj && start && end) {
                 const dKey = dObj.toISOString().split('T')[0];
                 if (dObj >= start && dObj <= end) {
                     totalRangeVolume.tons += r.weight/1000;
@@ -269,7 +276,9 @@
     function renderTodayMonitor() {
         const l = document.getElementById('ui-lang').value;
         const d = i18n[l];
-        const selDate = new Date(document.getElementById('mon-date').value);
+        const selDate = smartParseDate(document.getElementById('mon-date').value);
+        if(!selDate) return;
+
         let start = new Date(selDate); start.setHours(7,0,0,0);
         let end = new Date(start); end.setDate(end.getDate()+1);
         const base = parseInt(localStorage.getItem('set_base_time')) || avgWorkTime;
@@ -353,15 +362,17 @@
         const mats = [...new Set(rawData.map(r => r.matName))].sort();
         document.getElementById('mat-list').innerHTML = mats.map(m => `<option value="${m}">`).join('');
     }
+
     function startAutoRefresh() {
         if (refreshTimer) clearInterval(refreshTimer);
         const rate = parseInt(localStorage.getItem('set_refresh_rate') || '600');
         if (rate <= 0) return; countdown = rate;
         refreshTimer = setInterval(async () => {
-            countdown--; document.getElementById('refresh-timer').innerText = `🔄 Refresh in ${countdown}s`;
+            countdown--; document.getElementById('refresh-timer').innerText = `🔄 重新整理中 ${countdown}s`;
             if (countdown <= 0) { await fetchPublishedData(); countdown = rate; }
         }, 1000);
     }
+
     function toggleSettings() { document.getElementById('settings-panel').classList.toggle('active'); }
     function saveSettings() {
         localStorage.setItem('set_refresh_rate', document.getElementById('set-refresh-rate').value);
