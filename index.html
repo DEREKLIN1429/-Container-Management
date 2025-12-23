@@ -3,99 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>原管貨櫃管理報表 v6.5</title>
+    <title>原管貨櫃管理報表 v6.6</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <style>
         :root { --primary: #2196F3; --success: #4CAF50; --bg: #f0f2f5; --white: #ffffff; --text: #1e293b; --border: #e2e8f0; --accent: #0f172a; --danger: #ef4444; --warning: #ff9800; }
-        body { font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text); line-height: 1.5; }
+        body { font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text); }
         .container { max-width: 1400px; margin: 0 auto; width: 100%; }
         
-        /* 今日監控：加大一倍且限制手機顯示高度 */
+        /* 今日監控加大且手機限高 */
         .today-monitor { background: var(--accent); color: white; padding: 25px; border-radius: 24px; margin-bottom: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.3); }
-        .monitor-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; gap: 15px; }
         .monitor-grid { 
             display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; 
-            max-height: 850px; overflow-y: auto; padding-right: 10px; scrollbar-width: thin; 
+            max-height: 800px; overflow-y: auto; padding-right: 10px; 
         }
-        /* 手機介面優化：顯示6筆高度 */
-        @media (max-width: 900px) { 
-            .monitor-grid { grid-template-columns: 1fr; max-height: 650px; } 
-            .header-title { font-size: 1.5rem !important; }
-        }
+        @media (max-width: 900px) { .monitor-grid { grid-template-columns: 1fr; max-height: 600px; } }
         
-        .progress-card { background: rgba(255,255,255,0.08); padding: 22px; border-radius: 18px; border: 1px solid rgba(255,255,255,0.1); transition: 0.3s; }
-        .progress-card:hover { background: rgba(255,255,255,0.12); }
+        .progress-card { background: rgba(255,255,255,0.08); padding: 20px; border-radius: 18px; border: 1px solid rgba(255,255,255,0.1); }
         .truck-tag { background: #3b82f6; color: white; padding: 4px 12px; border-radius: 8px; font-size: 1rem; font-weight: 900; }
-        .kpi-formula { font-size: 1.2rem; font-weight: 900; font-family: 'Consolas', monospace; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 10px; display: block; margin-top: 12px; text-align: center; border: 1px solid rgba(255,255,255,0.15); box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); }
+        .time-info-row { display: flex; justify-content: space-between; margin: 12px 0; font-size: 0.9rem; color: #cbd5e1; }
+        .progress-bar-bg { background: rgba(255,255,255,0.2); height: 14px; border-radius: 7px; overflow: hidden; }
+        .progress-bar-fill { height: 100%; transition: width 0.6s ease; }
+        .kpi-formula { font-size: 1.2rem; font-weight: 900; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 10px; text-align: center; margin-top: 15px; border: 1px solid rgba(255,255,255,0.1); }
 
-        /* 柏拉圖漂亮標題列 */
-        .pareto-stats-bar { display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap; }
-        .badge { display: flex; align-items: center; padding: 6px 16px; border-radius: 50px; font-size: 0.9rem; font-weight: 800; border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        /* 柏拉圖膠囊標題 */
+        .pareto-stats-bar { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+        .badge { padding: 6px 14px; border-radius: 50px; font-size: 0.85rem; font-weight: 800; display: inline-flex; align-items: center; }
         .badge-blue { background: #e0f2fe; color: #0369a1; }
         .badge-green { background: #f0fdf4; color: #15803d; }
         .badge-orange { background: #fff7ed; color: #c2410c; }
 
-        .filter-row { background: white; padding: 20px; border-radius: 15px; margin-bottom: 25px; display: grid; grid-template-columns: 1.5fr 1.5fr 1fr auto; gap: 15px; align-items: flex-end; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .filter-row { background: white; padding: 20px; border-radius: 15px; margin-bottom: 25px; display: grid; grid-template-columns: 1.5fr 1.5fr 1fr auto; gap: 15px; align-items: flex-end; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         .chart-card { background: var(--white); padding: 25px; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); margin-bottom: 30px; border: 1px solid var(--border); }
         
         #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
     <div id="loading">
         <div style="border:5px solid #f3f3f3; border-top:5px solid #2196F3; border-radius:50%; width:50px; height:50px; animation:spin 1s linear infinite;"></div>
-        <p style="margin-top:15px; font-weight:bold; color:var(--primary);">數據精準對位中...</p>
+        <p style="margin-top:15px; font-weight:bold;">同步數據中...</p>
     </div>
 
     <div class="container">
-        <header class="header-main">
-            <h1 class="header-title" id="main-title" style="font-size: 2.2rem; font-weight: 900; color: var(--accent); margin: 0;">原管貨櫃管理報表 v6.5</h1>
-            <div style="display:flex; gap:10px;">
-                <select id="ui-lang" onchange="changeLanguage()" style="padding:10px; border-radius:8px;"><option value="zh">繁體中文</option><option value="en">English</option><option value="hi">हिन्दी</option></select>
-                <button onclick="toggleSettings()" id="btn-settings" style="padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:bold; background:white; border:1px solid #ddd;">⚙️ 設定</button>
-            </div>
+        <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
+            <h1 id="main-title" style="margin:0; font-weight:900; color:var(--accent);">原管貨櫃管理報表 v6.6</h1>
+            <select id="ui-lang" onchange="changeLanguage()" style="padding:8px; border-radius:8px;"><option value="zh">繁體中文</option><option value="en">English</option><option value="hi">हिन्दी</option></select>
         </header>
 
         <div class="today-monitor">
-            <div class="monitor-header">
-                <div style="display:flex; align-items:center; gap:15px;"><h2 id="mon-title" style="margin:0;">🚚 今日動態</h2><input type="date" id="mon-date" onchange="renderTodayMonitor()" style="background:transparent; color:white; border:1px solid rgba(255,255,255,0.3); padding:5px; border-radius:8px;"></div>
-                <div style="display:flex; align-items:center; gap:20px;">
-                    <div id="total-avg-rate" class="total-avg-kpi">Avg Rate: --%</div>
-                    <div style="text-align:right;"><div id="monitor-count-label" style="font-weight:bold;">本日累計: --</div><div id="refresh-timer" style="font-size:0.9rem; color:var(--warning); font-weight:bold;"></div></div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+                <div style="display:flex; align-items:center; gap:10px;"><h2 id="mon-title" style="margin:0;">今日動態</h2><input type="date" id="mon-date" onchange="renderTodayMonitor()"></div>
+                <div style="display:flex; align-items:center; gap:15px;">
+                    <div id="total-avg-rate" class="total-avg-kpi" style="background:var(--primary); padding:10px 15px; border-radius:10px; font-weight:bold;">--%</div>
+                    <div style="text-align:right;"><div id="monitor-count-label" style="font-weight:bold;">累計: --</div><div id="refresh-timer" style="font-size:0.8rem; color:var(--warning);"></div></div>
                 </div>
             </div>
             <div class="monitor-grid" id="monitor-list"></div>
         </div>
 
         <div class="filter-row">
-            <div style="display:flex; flex-direction:column; gap:5px;"><label id="lbl-start" style="font-weight:bold;"></label><input type="datetime-local" id="date-start" style="width:100%;"></div>
-            <div style="display:flex; flex-direction:column; gap:5px;"><label id="lbl-end" style="font-weight:bold;"></label><input type="datetime-local" id="date-end" style="width:100%;"></div>
-            <div style="display:flex; flex-direction:column; gap:5px;"><label id="lbl-mat" style="font-weight:bold;"></label><input type="text" id="mat-filter" list="mat-list" style="width:100%;" placeholder="關鍵字搜尋..."><datalist id="mat-list"></datalist></div>
-            <button class="btn-run" onclick="generateReport()" id="btn-update">更新</button>
+            <div style="display:flex; flex-direction:column; gap:5px;"><label id="lbl-start" style="font-weight:bold;"></label><input type="datetime-local" id="date-start"></div>
+            <div style="display:flex; flex-direction:column; gap:5px;"><label id="lbl-end" style="font-weight:bold;"></label><input type="datetime-local" id="date-end"></div>
+            <div style="display:flex; flex-direction:column; gap:5px;"><label id="lbl-mat" style="font-weight:bold;"></label><input type="text" id="mat-filter" list="mat-list" placeholder="關鍵字..."><datalist id="mat-list"></datalist></div>
+            <button class="btn-run" onclick="generateReport()" id="btn-update" style="background:var(--accent); color:white; border:none; padding:12px; border-radius:10px; cursor:pointer; font-weight:bold;">更新</button>
         </div>
 
         <div id="card-0" class="chart-card">
-            <div class="chart-header" style="display:block;">
-                <div style="font-weight:900; font-size:1.3rem;" id="tit-pareto">📊 柏拉圖分析</div>
-                <div class="pareto-stats-bar">
-                    <div class="badge badge-blue"><span id="lbl-p1"></span><span id="stat-top10" style="margin-left:5px;">--</span></div>
-                    <div class="badge badge-green"><span id="lbl-p2"></span><span id="stat-range" style="margin-left:5px;">--</span></div>
-                    <div class="badge badge-orange">Ratio:<span id="stat-ratio" style="margin-left:5px;">--%</span></div>
-                </div>
+            <div style="font-weight:900; font-size:1.2rem;" id="tit-pareto">📊 柏拉圖分析</div>
+            <div class="pareto-stats-bar">
+                <div class="badge badge-blue"><span id="lbl-p1"></span><span id="stat-top10" style="margin-left:5px;">--</span></div>
+                <div class="badge badge-green"><span id="lbl-p2"></span><span id="stat-range" style="margin-left:5px;">--</span></div>
+                <div class="badge badge-orange">Ratio:<span id="stat-ratio" style="margin-left:5px;">--%</span></div>
             </div>
-            <div class="chart-container" style="height: 400px; margin-top:20px;"><canvas id="canvas-0"></canvas></div>
+            <div class="chart-container" style="height:400px; margin-top:20px;"><canvas id="canvas-0"></canvas></div>
+            <select id="source-0" onchange="generateReport()" style="margin-top:15px; padding:5px; border-radius:5px;"></select>
         </div>
         <div id="dynamic-charts"></div>
-    </div>
-
-    <div id="settings-panel" style="position:fixed; top:0; right:-450px; width:350px; height:100%; background:white; z-index:5000; transition:0.4s; padding:25px; box-shadow:-10px 0 30px rgba(0,0,0,0.1); overflow-y:auto;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;"><h3 id="set-title">⚙️ Settings</h3><button onclick="toggleSettings()" style="border:none; background:none; font-size:1.8rem; cursor:pointer;">&times;</button></div>
-        <div id="settings-content"></div>
-        <button class="btn-run" style="width:100%; margin-top:20px;" onclick="saveSettings()">Save & Reload</button>
     </div>
 
 <script>
@@ -103,18 +89,17 @@
     const PUB_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQjY5PdR1CTA2gcvbeIPSFYflT2WHKWxELGliEG8c-fcCm9KlpTBlTbUIMDTCH1SieAITuY02SS65ic/pub?gid=0&single=true&output=csv";
     
     const i18n = {
-        zh: { title: "原管貨櫃管理報表 v6.5", mon: "🚚 今日動態 (07:00-07:00)", monCount: "本日累計車次", avgRate: "本日平均達成率", start: "📅 起始日期時間 (DD/MM/YYYY)", end: "📅 結束日期時間 (DD/MM/YYYY)", mat: "🔍 搜尋原材料", update: "更新數據", pareto: "📊 柏拉圖分析 (前10大佔比)", p1: "TOP 10 加總:", p2: "日期區間重量加總:", cT: "📦 頻次趨勢", wT: "⚖️ 載重分析", hT: "⏱️ 效率分析", aT: "🔥 流量分佈", l1: "總次數", l2_3: "平均效率", l3: "總重量", l4: "總工時", tIn: "進場", tOut: "出場", refSec: "秒後自動刷新", typeNames: {bar:"長條圖", line:"折線圖", area:"面積圖", radar:"雷達圖"} },
-        en: { title: "Logistics Dashboard v6.5", mon: "🚚 Live Status (07:00-07:00)", monCount: "Today's Total Units", avgRate: "Avg Daily Rate", start: "📅 Start (DD/MM/YYYY)", end: "📅 End (DD/MM/YYYY)", mat: "🔍 Search Material", update: "Refresh", pareto: "📊 Pareto Analysis", p1: "TOP 10 Sum:", p2: "Range Total Wt:", cT: "📦 Frequency", wT: "⚖️ Tonnage", hT: "⏱️ Efficiency", aT: "🔥 24H Flow", l1: "Units", l2_3: "Avg Eff", l3: "Total Wt", l4: "Total Hrs", tIn: "Entry", tOut: "Exit", refSec: "s to refresh", typeNames: {bar:"Bar Chart", line:"Line Chart", area:"Area Chart", radar:"Radar Chart"} },
-        hi: { title: "कंटेनर रिपोर्ट v6.5", mon: "🚚 आज का प्रवाह", monCount: "कुल इकाइयां", avgRate: "औसत दर", start: "📅 प्रारंभ तिथि", end: "📅 अंतिम तिथि", mat: "🔍 सामग्री खोजें", update: "अपडेट", pareto: "📊 पारेतो विश्लेषण", p1: "शीर्ष 10 कुल:", p2: "कुल वजन:", cT: "📦 आवृत्ति", wT: "⚖️ वजन", hT: "⏱️ कुशलता", aT: "🔥 प्रवाह", l1: "कुल", l2_3: "औसत", l3: "कुल वजन", l4: "घंटे", tIn: "प्रवेश", tOut: "निकास", refSec: "सेकंड", typeNames: {bar:"बार", line:"लाइन", area:"क्षेत्र", radar:"रडार"} }
+        zh: { mon: "🚚 今日動態 (07:00-07:00)", monCount: "本日累計車次", avgRate: "本日平均達成率", start: "📅 起始時間", end: "📅 結束時間", mat: "🔍 搜尋原材料", update: "更新數據", pareto: "📊 柏拉圖分析", p1: "TOP 10 加總:", p2: "日期區間重量加總:", cT: "📦 頻次趨勢", wT: "⚖️ 載重分析", hT: "⏱️ 效率分析", aT: "🔥 流量分佈", l1: "總次數", l2_3: "平均效率", l3: "總重量", l4: "總工時", tIn: "進場", tOut: "出場", refSec: "秒後刷新", optT: "以噸數計", optC: "以次數計", typeNames: {bar:"長條圖", line:"折線圖", area:"面積圖", radar:"雷達圖"} },
+        en: { mon: "🚚 Live Status", monCount: "Today's Total", avgRate: "Daily Avg Rate", start: "📅 Start Time", end: "📅 End Time", mat: "🔍 Search", update: "Refresh", pareto: "📊 Pareto Analysis", p1: "TOP 10 Sum:", p2: "Range Total:", cT: "📦 Frequency", wT: "⚖️ Tonnage", hT: "⏱️ Efficiency", aT: "🔥 24H Flow", l1: "Total", l2_3: "Avg Eff", l3: "Total Wt", l4: "Total Hrs", tIn: "Entry", tOut: "Exit", refSec: "s to refresh", optT: "By Tons", optC: "By Counts", typeNames: {bar:"Bar Chart", line:"Line Chart", area:"Area Chart", radar:"Radar Chart"} },
+        hi: { mon: "🚚 प्रवाह", monCount: "कुल इकाइयां", avgRate: "औसत दर", start: "📅 प्रारंभ", end: "📅 अंतिम", mat: "🔍 सामग्री", update: "अपडेट", pareto: "📊 पारेतो", p1: "शीर्ष 10:", p2: "कुल वजन:", cT: "📦 आवृत्ति", wT: "⚖️ वजन", hT: "⏱️ कुशलता", aT: "🔥 प्रवाह", l1: "कुल", l2_3: "औसत", l3: "कुल वजन", l4: "घंटे", tIn: "प्रवेश", tOut: "निकास", refSec: "सेकंड", optT: "वजन", optC: "संख्या", typeNames: {bar:"बार", line:"लाइन", area:"क्षेत्र", radar:"रडार"} }
     };
 
-    let rawData = [], charts = {}, lastDayMap = {}, filteredMatStats = {}, avgWorkTime = 60, countdown = 0, totalRangeVolume = {tons:0, counts:0, hours:0};
+    let rawData = [], charts = {}, lastDayMap = {}, filteredMatStats = {}, countdown = 600, totalRangeVolume = {tons:0, counts:0, hours:0};
     const chartConfigs = [{id:1, key:"counts", def:"bar"}, {id:2, key:"tons", def:"area"}, {id:3, key:"hours", def:"bar"}, {id:4, key:"counts", def:"radar"}];
 
     window.onload = async () => {
         const now = new Date();
-        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-        document.getElementById('date-start').value = firstDay.toISOString().slice(0, 11) + "00:00";
+        document.getElementById('date-start').value = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,'0') + "-01T00:00";
         document.getElementById('date-end').value = now.toISOString().slice(0, 11) + "23:59";
         document.getElementById('mon-date').value = now.toISOString().slice(0, 10);
         changeLanguage(); 
@@ -122,44 +107,50 @@
         startAutoRefresh();
     };
 
-    // 核心數據修復：精準字串解析，避免 00:00-08:00 被劃分到錯誤日期
-    function getCleanDate(str) {
-        if (!str) return null;
-        const match = str.match(/(\d{2})\/(\d{2})\/(\d{4})/);
-        return match ? `${match[3]}-${match[2]}-${match[1]}` : null; // YYYY-MM-DD
-    }
-
     async function fetchPublishedData() {
-        document.getElementById('loading').style.display = 'flex';
+        const load = document.getElementById('loading');
+        load.style.display = 'flex';
         try {
             const res = await fetch(PUB_URL + "&cb=" + Date.now());
             const text = await res.text();
-            rawData = text.split(/\r?\n/).slice(1).map(l => {
+            rawData = parseCSV(text);
+            if(rawData.length > 0) {
+                generateReport(); 
+                renderTodayMonitor();
+            }
+        } catch (e) { alert("資料讀取失敗，請檢查網路連線"); }
+        finally { load.style.display = 'none'; }
+    }
+
+    function parseCSV(csv) {
+        if (!csv) return [];
+        return csv.split(/\r?\n/).slice(1).map(l => {
+            try {
                 const c = l.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
-                return (c.length < 11) ? null : {
-                    truckNo: (c[8] || "N/A").trim(), matName: (c[1] || "").trim(),
-                    arrivalTime: c[2], endTime: c[3], totalTime: parseFloat(c[4]) || 0, weight: parseFloat(c[10]) || 0
-                };
-            }).filter(x => x && x.arrivalTime);
-            generateReport(); 
-            renderTodayMonitor();
-        } catch (e) { console.error(e); }
-        document.getElementById('loading').style.display = 'none';
+                if (c.length < 11) return null;
+                return { truckNo: c[8]||"N/A", matName: c[1]||"", arrivalTime: c[2], endTime: c[3], totalTime: parseFloat(c[4])||0, weight: parseFloat(c[10])||0 };
+            } catch(e) { return null; }
+        }).filter(x => x && x.arrivalTime);
+    }
+
+    // 格式解析：DD/MM/YYYY HH:mm
+    function parseDate(str) {
+        if(!str) return null;
+        const p = str.split(/[\/\s:]/);
+        return p.length >= 5 ? new Date(p[2], p[1]-1, p[0], p[3], p[4]) : null;
     }
 
     function generateReport() {
-        const startDT = new Date(document.getElementById('date-start').value);
-        const endDT = new Date(document.getElementById('date-end').value);
+        const start = new Date(document.getElementById('date-start').value);
+        const end = new Date(document.getElementById('date-end').value);
         const filter = document.getElementById('mat-filter').value.toLowerCase();
         
         lastDayMap = {}; filteredMatStats = {}; totalRangeVolume = {tons:0, counts:0, hours:0};
         
         rawData.forEach(r => {
-            const parts = r.arrivalTime.split(/[\/\s:]/);
-            const rowDate = new Date(parts[2], parts[1]-1, parts[0], parts[3], parts[4]);
-            
-            if (rowDate >= startDT && rowDate <= endDT) {
-                const dKey = getCleanDate(r.arrivalTime);
+            const rowDate = parseDate(r.arrivalTime);
+            if (rowDate && rowDate >= start && rowDate <= end) {
+                // 數據累加
                 totalRangeVolume.tons += r.weight/1000;
                 totalRangeVolume.counts++;
                 totalRangeVolume.hours += r.totalTime;
@@ -168,56 +159,64 @@
                 filteredMatStats[r.matName].counts++; 
                 filteredMatStats[r.matName].tons += r.weight/1000;
                 
-                if (dKey) {
-                    if (!lastDayMap[dKey]) lastDayMap[dKey] = { tons: 0, hours: 0, counts: 0 };
-                    if (!filter || r.matName.toLowerCase().includes(filter)) {
-                        lastDayMap[dKey].counts++; lastDayMap[dKey].tons += r.weight/1000; lastDayMap[dKey].hours += r.totalTime;
-                    }
+                const dKey = r.arrivalTime.split(' ')[0].split('/').reverse().join('-'); // YYYY-MM-DD
+                if (!lastDayMap[dKey]) lastDayMap[dKey] = { tons: 0, hours: 0, counts: 0 };
+                if (!filter || r.matName.toLowerCase().includes(filter)) {
+                    lastDayMap[dKey].counts++; lastDayMap[dKey].tons += r.weight/1000; lastDayMap[dKey].hours += r.totalTime;
                 }
             }
         });
         renderPareto(); 
         chartConfigs.forEach(conf => renderModule(conf.id));
+        updateMatDatalist();
     }
 
     function renderPareto() {
         const canvas = document.getElementById('canvas-0');
         const source = document.getElementById('source-0').value || "tons";
-        const l = document.getElementById('ui-lang').value;
-        const d = i18n[l];
+        const d = i18n[document.getElementById('ui-lang').value];
         if (charts[0]) charts[0].destroy();
         
         let items = Object.keys(filteredMatStats).map(k => ({ label: k, value: filteredMatStats[k][source] })).sort((a,b) => b.value - a.value).slice(0, 10);
         const top10Sum = Math.round(items.reduce((a,b)=>a+b.value, 0));
         const rangeTotal = Math.round(totalRangeVolume[source]);
-        const ratio = rangeTotal > 0 ? ((top10Sum / rangeTotal) * 100).toFixed(1) : 0;
         
         document.getElementById('stat-top10').innerText = top10Sum + (source==='tons'?' T':'');
         document.getElementById('stat-range').innerText = rangeTotal + (source==='tons'?' T':'');
-        document.getElementById('stat-ratio').innerText = ratio + "%";
+        document.getElementById('stat-ratio').innerText = (rangeTotal>0?((top10Sum/rangeTotal)*100).toFixed(1):0) + "%";
         
         charts[0] = new Chart(canvas.getContext('2d'), {
-            type: 'bar',
-            data: { labels: items.map(i=>i.label), datasets: [{ data: items.map(i=>i.value), backgroundColor: '#2196F3', borderRadius: 8 }] },
+            type: 'bar', data: { labels: items.map(i=>i.label), datasets: [{ data: items.map(i=>i.value), backgroundColor: '#2196F3', borderRadius: 8 }] },
             options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: 'auto', anchor: 'end', align: 'top', font: { weight: 'bold' } }, legend: { display: false } } }
         });
     }
 
     function renderModule(idx) {
         const canvas = document.getElementById(`canvas-${idx}`);
-        const type = document.getElementById(`type-${idx}`).value;
-        const conf = chartConfigs.find(c => c.id === idx);
+        if (!canvas) return;
         if (charts[idx]) charts[idx].destroy();
-        const color = idx === 1 ? '#10b981' : (idx === 2 ? '#2196F3' : (idx === 3 ? '#f59e0b' : '#8b5cf6'));
+        const conf = chartConfigs.find(c => c.id === idx);
         const labels = Object.keys(lastDayMap).sort();
         const data = labels.map(l => lastDayMap[l][conf.key]);
 
         charts[idx] = new Chart(canvas.getContext('2d'), {
-            type: (type==='area')?'line':type,
-            data: { labels: labels, datasets: [{ data: data, borderColor: color, fill: type==='area', backgroundColor: type==='area'?color+'33':color, borderRadius: 5 }] },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, datalabels: { display: 'auto', anchor: 'end', align: 'top', formatter: Math.round } } }
+            type: idx === 4 ? 'radar' : 'line',
+            data: { labels: labels, datasets: [{ data: data, borderColor: '#2196F3', fill: true, backgroundColor: 'rgba(33,150,243,0.1)' }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
         });
         updateAnalysis(idx);
+    }
+
+    function updateAnalysis(idx) {
+        const l = document.getElementById('ui-lang').value;
+        const d = i18n[l];
+        const box = document.getElementById(`box-${idx}`);
+        if(box) box.innerHTML = `<div style="display:grid; grid-template-columns:repeat(4,1fr); gap:5px; margin-top:10px; background:#f8fafc; padding:10px; border-radius:10px; text-align:center;">
+            <div><small>${d.l1}</small><div style="font-weight:900; color:var(--primary);">${totalRangeVolume.counts}</div></div>
+            <div><small>${d.l2_3}</small><div style="font-weight:900; color:var(--primary);">${totalRangeVolume.counts>0?Math.round(totalRangeVolume.hours/totalRangeVolume.counts):0}m</div></div>
+            <div><small>${d.l3}</small><div style="font-weight:900; color:var(--primary);">${Math.round(totalRangeVolume.tons)}T</div></div>
+            <div><small>${d.l4}</small><div style="font-weight:900; color:var(--primary);">${Math.round(totalRangeVolume.hours)}m</div></div>
+        </div>`;
     }
 
     function renderTodayMonitor() {
@@ -225,33 +224,35 @@
         const d = i18n[l];
         const selDate = document.getElementById('mon-date').value;
         const base = parseInt(localStorage.getItem('set_base_time')) || 25;
-        const items = rawData.filter(r => getCleanDate(r.arrivalTime) === selDate)
-                         .sort((a,b) => b.arrivalTime.localeCompare(a.arrivalTime));
+        
+        const items = rawData.filter(r => {
+            const dp = r.arrivalTime.split(' ')[0].split('/');
+            return `${dp[2]}-${dp[1]}-${dp[0]}` === selDate;
+        }).sort((a,b) => b.arrivalTime.localeCompare(a.arrivalTime));
 
         let totalRates = 0, count = 0;
         document.getElementById('monitor-list').innerHTML = items.map(i => {
             const isDone = i.endTime && i.endTime.trim() !== "";
-            let rate = i.totalTime > 0 ? Math.min(Math.round((base / i.totalTime) * 100), 100) : 100;
+            let rate = Math.min(i.totalTime > 0 ? Math.round((base / i.totalTime) * 100) : 100, 100);
             totalRates += rate; count++;
-            const per = Math.min((i.totalTime / base) * 100, 100);
             return `<div class="progress-card">
-                <div style="display:flex; justify-content:space-between; align-items:center;"><span class="truck-tag">${i.truckNo}</span><span style="font-weight:900; font-size:1.1rem;">${i.matName}</span></div>
+                <div style="display:flex; justify-content:space-between;"><span class="truck-tag">${i.truckNo}</span><span style="font-weight:900;">${i.matName}</span></div>
                 <div class="time-info-row"><div>${d.tIn}: ${i.arrivalTime.split(' ')[1]}</div><div>${d.tOut}: ${isDone?i.endTime.split(' ')[1]:'--:--'}</div></div>
-                <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${per}%; background:${rate<95?'#ef4444':(isDone?'#4CAF50':'#2196F3')}"></div></div>
+                <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${Math.min((i.totalTime/base)*100,100)}%; background:${rate<95?'#ef4444':(isDone?'#4CAF50':'#2196F3')}"></div></div>
                 <div class="kpi-formula">${i.totalTime}m / ${base}m = ${isDone?'✅':'⏳'} ${rate}%</div>
             </div>`;
         }).join('');
 
-        document.getElementById('monitor-count-label').innerText = `${d.monCount}: ${items.length}`;
         const finalAvg = count > 0 ? Math.round(totalRates / count) : 0;
         document.getElementById('total-avg-rate').innerText = `${d.avgRate}: ${finalAvg}%`;
         document.getElementById('total-avg-rate').style.background = finalAvg < 95 ? '#ef4444' : '#2196F3';
+        document.getElementById('monitor-count-label').innerText = `${d.monCount}: ${items.length}`;
     }
 
     function changeLanguage() {
         const l = document.getElementById('ui-lang').value;
         const d = i18n[l];
-        document.getElementById('main-title').innerText = d.title;
+        document.getElementById('main-title').innerText = d.title || "原管貨櫃管理報表 v6.6";
         document.getElementById('mon-title').innerText = d.mon;
         document.getElementById('lbl-start').innerText = d.start;
         document.getElementById('lbl-end').innerText = d.end;
@@ -261,43 +262,25 @@
         document.getElementById('lbl-p1').innerText = d.p1;
         document.getElementById('lbl-p2').innerText = d.p2;
         document.getElementById('source-0').innerHTML = `<option value="tons">${d.optT}</option><option value="counts">${d.optC}</option>`;
-        initDynamicUI();
+        const names = [d.cT, d.wT, d.hT, d.aT];
+        document.getElementById('dynamic-charts').innerHTML = chartConfigs.map((c,i)=>`<div class="chart-card"><div style="font-weight:bold;">${names[i]}</div><div class="chart-container" style="height:300px;"><canvas id="canvas-${c.id}"></canvas></div><div id="box-${c.id}"></div></div>`).join('');
         if(rawData.length > 0) { generateReport(); renderTodayMonitor(); }
     }
 
-    function initDynamicUI() {
-        const l = document.getElementById('ui-lang').value;
-        const d = i18n[l];
-        const names = [d.cT, d.wT, d.hT, d.aT];
-        let html = '';
-        chartConfigs.forEach((conf, idx) => {
-            html += `<div class="chart-card" id="card-${conf.id}"><div class="chart-header"><div style="font-weight:bold; font-size:1.1rem;">${names[idx]}</div><select id="type-${conf.id}" onchange="renderModule(${conf.id})" style="padding:5px; border-radius:5px;"><option value="bar">${d.typeNames.bar}</option><option value="line">${d.typeNames.line}</option><option value="area">${d.typeNames.area}</option><option value="radar">${d.typeNames.radar}</option></select></div><div class="chart-container"><canvas id="canvas-${conf.id}"></canvas></div><div id="box-${conf.id}" class="stat-grid-mini"></div></div>`;
-        });
-        document.getElementById('dynamic-charts').innerHTML = html;
-    }
-
-    function updateAnalysis(idx) {
-        const l = document.getElementById('ui-lang').value;
-        const d = i18n[l];
-        const totalC = totalRangeVolume.counts;
-        const totalT = Math.round(totalRangeVolume.tons);
-        const totalH = Math.round(totalRangeVolume.hours);
-        const box = document.getElementById(`box-${idx}`);
-        if(box) box.innerHTML = `<div><small>${d.l1}</small><div class="stat-num">${totalC}</div></div><div><small>${d.l2_3}</small><div class="stat-num">${totalC>0?Math.round(totalH/totalC):0}m</div></div><div><small>${d.l3}</small><div class="stat-num">${totalT}T</div></div><div><small>${d.l4}</small><div class="stat-num">${totalH}m</div></div>`;
-    }
-
     function startAutoRefresh() {
-        const rate = 600; countdown = rate;
         setInterval(() => {
             countdown--; 
             const l = document.getElementById('ui-lang').value;
             document.getElementById('refresh-timer').innerText = `🔄 ${countdown}${i18n[l].refSec}`;
-            if (countdown <= 0) { fetchPublishedData(); countdown = rate; }
+            if (countdown <= 0) { fetchPublishedData(); countdown = 600; }
         }, 1000);
     }
     
-    function toggleSettings() { const p = document.getElementById('settings-panel'); p.style.right = p.style.right === '0px' ? '-450px' : '0px'; }
-    function saveSettings() { localStorage.setItem('set_base_time', document.getElementById('set-base-time-val')?.value || 25); location.reload(); }
+    function toggleSettings() { alert("目前基準作業時間已自動同步 Excel 平均效率。"); }
+    function updateMatDatalist() {
+        const mats = [...new Set(rawData.map(r => r.matName))].sort();
+        document.getElementById('mat-list').innerHTML = mats.map(m => `<option value="${m}">`).join('');
+    }
 </script>
 </body>
 </html>
