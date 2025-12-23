@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>原管貨櫃管理報表 v5.5</title>
+    <title>原管貨櫃管理報表 v5.6</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
@@ -15,7 +15,10 @@
         .header-title { font-size: 2.2rem; font-weight: 900; color: var(--accent); margin: 0; }
         .today-monitor { background: var(--accent); color: white; padding: 25px; border-radius: 20px; margin-bottom: 25px; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
         .monitor-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
-        .total-avg-kpi { background: var(--primary); color: white; padding: 10px 20px; border-radius: 12px; font-weight: 900; font-size: 1.1rem; }
+        
+        /* 本日平均達成率樣式 - 支援動態背景 */
+        .total-avg-kpi { padding: 10px 20px; border-radius: 12px; font-weight: 900; font-size: 1.1rem; transition: background 0.3s; color: white; }
+        
         .monitor-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; max-height: 500px; overflow-y: auto; padding-right: 10px; }
         @media (max-width: 900px) { .monitor-grid { grid-template-columns: 1fr; } }
         .progress-card { background: rgba(255,255,255,0.1); padding: 18px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); }
@@ -56,7 +59,7 @@
 
     <div class="container">
         <header class="header-main">
-            <h1 class="header-title" id="main-title">原管貨櫃管理報表 v5.5</h1>
+            <h1 class="header-title" id="main-title">原管貨櫃管理報表 v5.6</h1>
             <div style="display:flex; gap:10px;">
                 <select id="ui-lang" onchange="changeLanguage()"><option value="zh">繁體中文</option><option value="en">English</option><option value="hi">हिन्दी</option></select>
                 <button onclick="toggleSettings()" id="btn-settings" style="padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:bold;">⚙️ 設定</button>
@@ -65,7 +68,7 @@
 
         <div class="today-monitor">
             <div class="monitor-header">
-                <div style="display:flex; align-items:center; gap:15px;"><h2 id="mon-title">🚚 今日動態</h2><input type="date" id="mon-date" onchange="renderTodayMonitor()"></div>
+                <div style="display:flex; align-items:center; gap:15px;"><h2 id="mon-title">🚚 今日動態 (07:00-07:00)</h2><input type="date" id="mon-date" onchange="renderTodayMonitor()"></div>
                 <div style="display:flex; align-items:center; gap:15px;">
                     <div id="total-avg-rate" class="total-avg-kpi">Avg Rate: --%</div>
                     <div style="text-align:right;"><div id="monitor-count">...</div><div id="refresh-timer" style="font-size:0.8rem; opacity:0.7;"></div></div>
@@ -77,7 +80,7 @@
         <div class="filter-row">
             <div style="display:flex; flex-direction:column; gap:5px;"><label id="lbl-start">起始</label><input type="date" id="date-start"></div>
             <div style="display:flex; flex-direction:column; gap:5px;"><label id="lbl-end">結束</label><input type="date" id="date-end"></div>
-            <div style="display:flex; flex-direction:column; gap:5px;"><label id="lbl-mat">搜尋原材料</label><input type="text" id="mat-filter" list="mat-list"><datalist id="mat-list"></datalist></div>
+            <div style="display:flex; flex-direction:column; gap:5px;"><label id="lbl-mat">搜尋原材料</label><input type="text" id="mat-filter" list="mat-list" placeholder="輸入關鍵字篩選..."><datalist id="mat-list"></datalist></div>
             <button class="btn-run" onclick="generateReport()" id="btn-update">更新</button>
         </div>
 
@@ -96,9 +99,9 @@
     const PUB_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQjY5PdR1CTA2gcvbeIPSFYflT2WHKWxELGliEG8c-fcCm9KlpTBlTbUIMDTCH1SieAITuY02SS65ic/pub?gid=0&single=true&output=csv";
     
     const i18n = {
-        zh: { mon: "🚚 今日動態 (07:00-07:00)", avgRate: "本日平均達成率", pareto: "📊 柏拉圖分析", rTotal: "區間加總", gTotal: "區間總量", cT: "📦 頻次趨勢", wT: "⚖️ 載重分析", hT: "⏱️ 效率分析", aT: "🔥 流量分佈", l1: "總次數", l2_1: "日均次數", l2_2: "日均重量", l2_3: "平均效率", l2_4: "工作時間分佈", l3: "總重量", l4: "總工時", monRate: "達成率", monTruck: "車號", optT: "以噸數計", optC: "以次數計", optSumH: "每日總工時", optAvgH: "每日平均時間", typeNames: {bar:"長條圖", line:"折線圖", area:"面積圖", stepped:"階梯圖", radar:"雷達圖"} },
-        en: { mon: "🚚 Live Status", avgRate: "Daily Avg Rate", pareto: "📊 Pareto", rTotal: "Range Sum", gTotal: "Range Total", cT: "📦 Frequency", wT: "⚖️ Tonnage", hT: "⏱️ Efficiency", aT: "🔥 24H Flow", l1: "Total Units", l2_1: "Daily Avg", l2_2: "Avg Weight", l2_3: "Avg Eff", l2_4: "Work Time Period", l3: "Total Wt", l4: "Total Hrs", monRate: "Rate", monTruck: "Truck", optT: "By Tonnage", optC: "By Counts", optSumH: "Total Hours", optAvgH: "Avg Time", typeNames: {bar:"Bar Chart", line:"Line Chart", area:"Area Chart", stepped:"Stepped", radar:"Radar Chart"} },
-        hi: { mon: "🚚 आज का प्रवाह", avgRate: "औसत दर", pareto: "📊 पारेतो", rTotal: "श्रेणी योग", gTotal: "कुल वजन", cT: "📦 आगमन", wT: "⚖️ वजन", hT: "⏱️ कुशलता", aT: "🔥 प्रवाह", l1: "कुल इकाइयां", l2_1: "दैनिक औसत", l2_2: "औसत वजन", l2_3: "कुशलता", l2_4: "समय अवधि", l3: "कुल वजन", l4: "कुल घंटे", monRate: "दर", monTruck: "ट्रक", optT: "वजन से", optC: "संख्या से", optSumH: "कुल घंटे", optAvgH: "औसत समय", typeNames: {bar:"बार", line:"लाइन", area:"क्षेत्र", stepped:"स्टेप्ड", radar:"रडार"} }
+        zh: { mon: "🚚 今日動態 (07:00-07:00)", avgRate: "本日平均達成率", pareto: "📊 柏拉圖分析", rTotal: "TOP 10 加總", gTotal: "區間總量", cT: "📦 頻次趨勢", wT: "⚖️ 載重分析", hT: "⏱️ 效率分析", aT: "🔥 流量分佈", l1: "總次數", l2_1: "日均次數", l2_2: "日均重量", l2_3: "平均效率", l2_4: "工作時間分佈", l3: "總重量", l4: "總工時", monRate: "達成率", monTruck: "車號", optT: "以噸數計", optC: "以次數計", tIn: "進場時間", tOut: "出場時間", typeNames: {bar:"長條圖", line:"折線圖", area:"面積圖", stepped:"階梯圖", radar:"雷達圖"} },
+        en: { mon: "🚚 Live Status", avgRate: "Daily Avg Rate", pareto: "📊 Pareto", rTotal: "TOP 10 Sum", gTotal: "Range Total", cT: "📦 Frequency", wT: "⚖️ Tonnage", hT: "⏱️ Efficiency", aT: "🔥 24H Flow", l1: "Total Units", l2_1: "Daily Avg", l2_2: "Avg Weight", l2_3: "Avg Eff", l2_4: "Work Period", l3: "Total Wt", l4: "Total Hrs", monRate: "Rate", monTruck: "Truck", optT: "By Tonnage", optC: "By Counts", tIn: "Entry Time", tOut: "Exit Time", typeNames: {bar:"Bar Chart", line:"Line Chart", area:"Area Chart", stepped:"Stepped", radar:"Radar Chart"} },
+        hi: { mon: "🚚 आज का प्रवाह", avgRate: "औसत दर", pareto: "📊 पारेतो", rTotal: "शीर्ष 10 कुल", gTotal: "कुल वजन", cT: "📦 आवृत्ति", wT: "⚖️ वजन", hT: "⏱️ कुशलता", aT: "🔥 प्रवाह", l1: "कुल इकाइयां", l2_1: "दैनिक", l2_2: "औसत", l2_3: "कुशलता", l2_4: "समय", l3: "कुल वजन", l4: "घंटे", monRate: "दर", monTruck: "ट्रक", optT: "वजन", optC: "संख्या", tIn: "प्रवेश", tOut: "निकास", typeNames: {bar:"बार", line:"लाइन", area:"क्षेत्र", stepped:"स्टेप्ड", radar:"रडार"} }
     };
 
     let rawData = [], charts = {}, lastDayMap = {}, filteredMatStats = {}, avgWorkTime = 60, gFlow = Array(24).fill(0), totalRangeVolume = {tons:0, counts:0};
@@ -110,12 +113,10 @@
         document.getElementById('date-start').value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
         document.getElementById('date-end').value = now.toISOString().split('T')[0];
         document.getElementById('mon-date').value = now.toISOString().split('T')[0];
-        
         document.getElementById('set-refresh-rate').value = localStorage.getItem('set_refresh_rate') || '600';
         document.getElementById('set-base-time').value = localStorage.getItem('set_base_time') || '';
         document.getElementById('set-warn-threshold').value = localStorage.getItem('set_warn_threshold') || '95';
         document.getElementById('set-warn-color').value = localStorage.getItem('set_warn_color') || '#ef4444';
-        
         changeLanguage(); 
         await fetchPublishedData();
         startAutoRefresh();
@@ -125,12 +126,11 @@
         document.getElementById('loading').style.display = 'flex';
         try {
             const res = await fetch(PUB_URL + "&cb=" + Date.now());
-            const text = await res.text();
-            rawData = parseCSV(text);
-            // 重要：資料載入後立即啟動渲染流程
+            rawData = parseCSV(await res.text());
             generateReport(); 
             renderTodayMonitor();
-        } catch (e) { console.error("Fetch Error:", e); }
+            updateMatDatalist(); // 確保資料載入後更新下拉選單
+        } catch (e) { console.error(e); }
         document.getElementById('loading').style.display = 'none';
     }
 
@@ -141,44 +141,6 @@
             if (c.length < 11) return null;
             return { truckNo: c[8] || "N/A", matName: c[1] || "", arrivalTime: c[2], endTime: c[3], totalTime: parseFloat(c[4]) || 0, weight: parseFloat(c[10]) || 0 };
         }).filter(x => x && x.matName);
-    }
-
-    function changeLanguage() {
-        const l = document.getElementById('ui-lang').value;
-        const d = i18n[l];
-        document.getElementById('main-title').innerText = d.title || "原管貨櫃管理報表 v5.5";
-        document.getElementById('mon-title').innerText = d.mon;
-        document.getElementById('tit-pareto').innerText = d.pareto;
-        document.getElementById('btn-settings').innerText = "⚙️ " + (l === 'zh' ? '設定' : 'Settings');
-        
-        const sourceSelect = document.getElementById('source-0');
-        const currentVal = sourceSelect.value || "tons";
-        sourceSelect.innerHTML = `<option value="tons" ${currentVal==='tons'?'selected':''}>${d.optT}</option><option value="counts" ${currentVal==='counts'?'selected':''}>${d.optC}</option>`;
-
-        initDynamicUI();
-        if(rawData.length > 0) { generateReport(); renderTodayMonitor(); }
-    }
-
-    function initDynamicUI() {
-        const l = document.getElementById('ui-lang').value;
-        const d = i18n[l];
-        const names = [d.cT, d.wT, d.hT, d.aT];
-        let html = '', setHtml = '';
-        chartConfigs.forEach((conf, idx) => {
-            const savedType = localStorage.getItem(`def_type_${conf.id}`) || conf.def;
-            let extraSelect = "";
-            if (conf.id === 3) {
-                const curMode = localStorage.getItem('eff_mode') || 'sum';
-                extraSelect = `<select id="eff-mode" onchange="localStorage.setItem('eff_mode', this.value); renderModule(3)" style="margin-right:10px;">
-                    <option value="sum" ${curMode==='sum'?'selected':''}>${d.optSumH}</option>
-                    <option value="avg" ${curMode==='avg'?'selected':''}>${d.optAvgH}</option>
-                </select>`;
-            }
-            html += `<div class="chart-card" id="card-${conf.id}"><div class="chart-header"><div style="font-weight:bold;">${names[idx]}</div><div style="display:flex;">${extraSelect}<select id="type-${conf.id}" onchange="renderModule(${conf.id})"><option value="bar" ${savedType==='bar'?'selected':''}>${d.typeNames.bar}</option><option value="line" ${savedType==='line'?'selected':''}>${d.typeNames.line}</option><option value="area" ${savedType==='area'?'selected':''}>${d.typeNames.area}</option><option value="stepped" ${savedType==='stepped'?'selected':''}>${d.typeNames.stepped}</option><option value="radar" ${savedType==='radar'?'selected':''}>${d.typeNames.radar}</option></select></div></div><div class="chart-container"><canvas id="canvas-${conf.id}"></canvas></div><div id="box-${conf.id}" class="stat-grid-mini"></div></div>`;
-            setHtml += `<div class="set-item"><label>${names[idx]} 預設類型</label><select id="set-type-${conf.id}" style="width:100%;"><option value="bar" ${savedType==='bar'?'selected':''}>${d.typeNames.bar}</option><option value="line" ${savedType==='line'?'selected':''}>${d.typeNames.line}</option><option value="area" ${savedType==='area'?'selected':''}>${d.typeNames.area}</option><option value="stepped" ${savedType==='stepped'?'selected':''}>${d.typeNames.stepped}</option><option value="radar" ${savedType==='radar'?'selected':''}>${d.typeNames.radar}</option></select></div>`;
-        });
-        document.getElementById('dynamic-charts').innerHTML = html;
-        document.getElementById('settings-list').innerHTML = setHtml;
     }
 
     function generateReport() {
@@ -197,6 +159,7 @@
                 const dObj = new Date(m[3], m[2]-1, m[1], m[4], m[5]);
                 const dKey = dObj.toISOString().split('T')[0];
                 if (dObj >= start && dObj <= end) {
+                    // 修正：柏拉圖總量統計 (分母)
                     totalRangeVolume.tons += r.weight/1000;
                     totalRangeVolume.counts++;
                     rangeTotalHours += r.totalTime;
@@ -211,23 +174,25 @@
             }
         });
         avgWorkTime = totalRangeVolume.counts > 0 ? Math.round(rangeTotalHours / totalRangeVolume.counts) : 60;
-        document.getElementById('avg-hint').innerText = `【區間平均效率】: ${avgWorkTime} Min`;
+        document.getElementById('avg-hint').innerText = `區間平均效率: ${avgWorkTime} Min`;
         renderPareto(); chartConfigs.forEach(conf => renderModule(conf.id));
     }
 
     function renderPareto() {
         const canvas = document.getElementById('canvas-0');
-        const source = document.getElementById('source-0').value;
+        const source = document.getElementById('source-0').value || "tons";
         const l = document.getElementById('ui-lang').value;
         const d = i18n[l];
         if (charts[0]) charts[0].destroy();
         
         let items = Object.keys(filteredMatStats).map(k => ({ label: k, value: filteredMatStats[k][source] })).sort((a,b) => b.value - a.value).slice(0, 10);
-        const rTop10Sum = Math.round(items.reduce((a,b)=>a+b.value, 0));
-        const gRangeTotal = Math.round(totalRangeVolume[source]);
-        const ratio = gRangeTotal > 0 ? ((rTop10Sum / gRangeTotal) * 100).toFixed(1) : 0;
+        const top10Sum = Math.round(items.reduce((a,b)=>a+b.value, 0));
+        const rangeTotal = Math.round(totalRangeVolume[source]);
+        const ratio = rangeTotal > 0 ? ((top10Sum / rangeTotal) * 100).toFixed(1) : 0;
+        
+        // 修正：柏拉圖標題邏輯
         const unit = source === 'tons' ? ' T' : '';
-        document.getElementById('pareto-total').innerText = `${d.rTotal}: ${rTop10Sum}${unit} / ${d.gTotal}: ${gRangeTotal}${unit} = ${ratio}%`;
+        document.getElementById('pareto-total').innerText = `${d.rTotal}: ${top10Sum}${unit} / ${d.gTotal}: ${rangeTotal}${unit} = ${ratio}%`;
         
         let acc = 0; const sum = items.reduce((x,y)=>x+y.value,0) || 1;
         charts[0] = new Chart(canvas.getContext('2d'), {
@@ -235,34 +200,6 @@
             data: { labels: items.map(i=>i.label), datasets: [{ data: items.map(i=>i.value), backgroundColor: '#2196F3', borderRadius: 5, yAxisID: 'y' }, { data: items.map(i => { acc+=i.value; return (acc/sum)*100; }), type: 'line', borderColor: '#ef4444', yAxisID: 'y1' }] },
             options: { responsive: true, maintainAspectRatio: false, layout: { padding: { top: 45 } }, plugins: { legend: { display: false }, datalabels: { display: 'auto', anchor: 'end', align: 'top', clip: false, formatter: Math.round } }, scales: { y: { beginAtZero: true }, y1: { position: 'right', max: 100, grid: { drawOnChartArea: true, color: 'rgba(239,68,68,0.1)', borderDash:[5,5] } } } }
         });
-    }
-
-    function renderModule(idx) {
-        const canvas = document.getElementById(`canvas-${idx}`);
-        const typeSelect = document.getElementById(`type-${idx}`);
-        if (!canvas || !typeSelect) return;
-        const type = typeSelect.value;
-        const conf = chartConfigs.find(c => c.id === idx);
-        if (charts[idx]) charts[idx].destroy();
-        const color = idx === 1 ? '#10b981' : (idx === 2 ? '#2196F3' : (idx === 3 ? '#f59e0b' : '#8b5cf6'));
-        let labels = (idx === 4) ? Array.from({length:24}, (_,i)=>i+'h') : Object.keys(lastDayMap).sort();
-        
-        let data = [];
-        if (idx === 3) {
-            const mode = localStorage.getItem('eff_mode') || 'sum';
-            data = labels.map(l => mode === 'sum' ? lastDayMap[l].hours : (lastDayMap[l].counts > 0 ? Math.round(lastDayMap[l].hours/lastDayMap[l].counts) : 0));
-        } else if (idx === 4) {
-            data = gFlow;
-        } else {
-            data = labels.map(l => lastDayMap[l][conf.key]);
-        }
-
-        charts[idx] = new Chart(canvas.getContext('2d'), {
-            type: (type==='stepped'||type==='area')?'line':type,
-            data: { labels: labels, datasets: [{ data: data, borderColor: color, stepped: type==='stepped', fill: type==='area', backgroundColor: type==='bar'?color:color+'33' }] },
-            options: { responsive: true, maintainAspectRatio: false, layout: { padding: { top: 45 } }, plugins: { legend: { display: false }, datalabels: { display: 'auto', anchor: 'end', align: 'top', clip: false, formatter: Math.round } }, scales: type==='radar'?{r:{suggestMin:0}}:{y:{beginAtZero: true}} }
-        });
-        updateAnalysis(idx);
     }
 
     function renderTodayMonitor() {
@@ -274,7 +211,6 @@
         const base = parseInt(localStorage.getItem('set_base_time')) || avgWorkTime;
         const threshold = parseInt(localStorage.getItem('set_warn_threshold')) || 95;
         const alertColor = localStorage.getItem('set_warn_color') || '#ef4444';
-        
         const items = rawData.filter(r => {
             const m = r.arrivalTime?.match(/(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})/);
             if(!m) return false;
@@ -288,15 +224,76 @@
             let rawRate = i.totalTime > 0 ? Math.round((base / i.totalTime) * 100) : 100;
             let displayRate = Math.min(rawRate, 100);
             totalRates += displayRate; count++;
+            
+            // 修正：時間標籤翻譯同步
             const entryTime = i.arrivalTime.split(' ')[1] || "--:--";
             const exitTime = isDone ? i.endTime.split(' ')[1] : "--:--";
+            
             const per = Math.min((i.totalTime / base) * 100, 100);
             const isAlert = displayRate < threshold;
-            return `<div class="progress-card"><div style="display:flex; justify-content:space-between; align-items:center;"><span class="truck-tag">${i.truckNo}</span><span style="font-weight:900;">${i.matName}</span></div><div class="time-info-row"><div><span>${d.tIn}:</span><span class="time-value">${entryTime}</span></div><div><span>${d.tOut}:</span><span class="time-value">${exitTime}</span></div></div><div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${per}%; background:${isAlert?alertColor:(isDone?'#4CAF50':'#2196F3')}"></div></div><div class="kpi-formula" style="color:${isAlert?alertColor:'#fff'}">${i.totalTime}m / ${base}m = ${isDone?'✅':'⏳'} ${displayRate}%</div></div>`;
+            return `<div class="progress-card">
+                <div style="display:flex; justify-content:space-between; align-items:center;"><span class="truck-tag">${i.truckNo}</span><span style="font-weight:900;">${i.matName}</span></div>
+                <div class="time-info-row">
+                    <div><span>${d.tIn}:</span> <span style="font-family:monospace;">${entryTime}</span></div>
+                    <div><span>${d.tOut}:</span> <span style="font-family:monospace;">${exitTime}</span></div>
+                </div>
+                <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${per}%; background:${isAlert?alertColor:(isDone?'#4CAF50':'#2196F3')}"></div></div>
+                <div class="kpi-formula" style="color:${isAlert?alertColor:'#fff'}">${i.totalTime}m / ${base}m = ${isDone?'✅':'⏳'} ${displayRate}%</div>
+            </div>`;
         }).join('');
-        document.getElementById('total-avg-rate').innerText = `${d.avgRate}: ${count>0?Math.round(totalRates/count):0}%`;
+
+        const finalAvg = count > 0 ? Math.round(totalRates / count) : 0;
+        const avgEl = document.getElementById('total-avg-rate');
+        avgEl.innerText = `${d.avgRate}: ${finalAvg}%`;
+        // 修正：總達成率低於標準變換警告顏色
+        avgEl.style.background = finalAvg < threshold ? alertColor : 'var(--primary)';
+
         document.getElementById('monitor-count').innerText = `${d.monCount}: ${items.length}`;
         document.getElementById('monitor-list').innerHTML = listHtml;
+    }
+
+    function changeLanguage() {
+        const l = document.getElementById('ui-lang').value;
+        const d = i18n[l];
+        document.getElementById('main-title').innerText = d.title || "原管貨櫃管理報表 v5.6";
+        document.getElementById('mon-title').innerText = d.mon;
+        document.getElementById('tit-pareto').innerText = d.pareto;
+        document.getElementById('btn-settings').innerText = "⚙️ " + (l === 'zh' ? '設定' : 'Settings');
+        const sourceSelect = document.getElementById('source-0');
+        const curVal = sourceSelect.value || "tons";
+        sourceSelect.innerHTML = `<option value="tons" ${curVal==='tons'?'selected':''}>${d.optT}</option><option value="counts" ${curVal==='counts'?'selected':''}>${d.optC}</option>`;
+        initDynamicUI();
+        if(rawData.length > 0) { generateReport(); renderTodayMonitor(); }
+    }
+
+    function initDynamicUI() {
+        const l = document.getElementById('ui-lang').value;
+        const d = i18n[l];
+        const names = [d.cT, d.wT, d.hT, d.aT];
+        let html = '';
+        chartConfigs.forEach((conf, idx) => {
+            const savedType = localStorage.getItem(`def_type_${conf.id}`) || conf.def;
+            html += `<div class="chart-card" id="card-${conf.id}"><div class="chart-header"><div style="font-weight:bold;">${names[idx]}</div><select id="type-${conf.id}" onchange="renderModule(${conf.id})"><option value="bar" ${savedType==='bar'?'selected':''}>${d.typeNames.bar}</option><option value="line" ${savedType==='line'?'selected':''}>${d.typeNames.line}</option><option value="area" ${savedType==='area'?'selected':''}>${d.typeNames.area}</option><option value="stepped" ${savedType==='stepped'?'selected':''}>${d.typeNames.stepped}</option><option value="radar" ${savedType==='radar'?'selected':''}>${d.typeNames.radar}</option></select></div><div class="chart-container"><canvas id="canvas-${conf.id}"></canvas></div><div id="box-${conf.id}" class="stat-grid-mini"></div></div>`;
+        });
+        document.getElementById('dynamic-charts').innerHTML = html;
+    }
+
+    function renderModule(idx) {
+        const canvas = document.getElementById(`canvas-${idx}`);
+        const typeSelect = document.getElementById(`type-${idx}`);
+        if (!canvas || !typeSelect) return;
+        const type = typeSelect.value;
+        const conf = chartConfigs.find(c => c.id === idx);
+        if (charts[idx]) charts[idx].destroy();
+        const color = idx === 1 ? '#10b981' : (idx === 2 ? '#2196F3' : (idx === 3 ? '#f59e0b' : '#8b5cf6'));
+        let labels = (idx === 4) ? Array.from({length:24}, (_,i)=>i+'h') : Object.keys(lastDayMap).sort();
+        let data = (idx === 4) ? gFlow : labels.map(l => lastDayMap[l][conf.key]);
+        charts[idx] = new Chart(canvas.getContext('2d'), {
+            type: (type==='stepped'||type==='area')?'line':type,
+            data: { labels: labels, datasets: [{ data: data, borderColor: color, stepped: type==='stepped', fill: type==='area', backgroundColor: type==='bar'?color:color+'33' }] },
+            options: { responsive: true, maintainAspectRatio: false, layout: { padding: { top: 45 } }, plugins: { legend: { display: false }, datalabels: { display: 'auto', anchor: 'end', align: 'top', clip: false, formatter: Math.round } }, scales: type==='radar'?{r:{suggestMin:0}}:{y:{beginAtZero: true}} }
+        });
+        updateAnalysis(idx);
     }
 
     function updateAnalysis(idx) {
@@ -315,18 +312,21 @@
             l2Label = d.l2_4;
             const am = gFlow.slice(0, 12).map((v,i)=>v>0?i:-1).filter(x=>x!==-1);
             const pm = gFlow.slice(12, 24).map((v,i)=>v>0?i+12:-1).filter(x=>x!==-1);
-            const amStr = am.length ? `00:00~12:00 分佈 ${Math.min(...am)}h-${Math.max(...am)}h` : "AM 無資料";
-            const pmStr = pm.length ? `12:00~00:00 分佈 ${Math.min(...pm)}h-${Math.max(...pm)}h` : "PM 無資料";
-            l2Val = `<div style="font-size:0.75rem; line-height:1.2;">${amStr}<br>${pmStr}</div>`;
+            const amStr = am.length ? `00:00~12:00: ${Math.min(...am)}h-${Math.max(...am)}h` : "AM: --";
+            const pmStr = pm.length ? `12:00~00:00: ${Math.min(...pm)}h-${Math.max(...pm)}h` : "PM: --";
+            l2Val = `<div style="font-size:0.7rem; line-height:1.2;">${amStr}<br>${pmStr}</div>`;
         }
         box.innerHTML = `<div><small>${d.l1}</small><div class="stat-num">${totalC}</div></div><div><small>${l2Label}</small><div class="stat-num">${l2Val}</div></div><div><small>${d.l3}</small><div class="stat-num">${Math.round(totalT)}T</div></div><div><small>${d.l4}</small><div class="stat-num">${Math.round(totalH)}m</div></div>`;
     }
 
+    function updateMatDatalist() {
+        const mats = [...new Set(rawData.map(r => r.matName))].sort();
+        document.getElementById('mat-list').innerHTML = mats.map(m => `<option value="${m}">`).join('');
+    }
     function startAutoRefresh() {
         if (refreshTimer) clearInterval(refreshTimer);
         const rate = parseInt(localStorage.getItem('set_refresh_rate') || '600');
-        if (rate <= 0) return;
-        countdown = rate;
+        if (rate <= 0) return; countdown = rate;
         refreshTimer = setInterval(async () => {
             countdown--; document.getElementById('refresh-timer').innerText = `🔄 ${countdown}s`;
             if (countdown <= 0) { await fetchPublishedData(); countdown = rate; }
@@ -338,12 +338,11 @@
         localStorage.setItem('set_base_time', document.getElementById('set-base-time').value);
         localStorage.setItem('set_warn_threshold', document.getElementById('set-warn-threshold').value);
         localStorage.setItem('set_warn_color', document.getElementById('set-warn-color').value);
-        chartConfigs.forEach(conf => localStorage.setItem(`def_type_${conf.id}`, document.getElementById(`type-${conf.id}`).value));
+        chartConfigs.forEach(conf => {
+            const el = document.getElementById(`type-${conf.id}`);
+            if(el) localStorage.setItem(`def_type_${conf.id}`, el.value);
+        });
         location.reload();
-    }
-    function updateMatDatalist() {
-        const mats = [...new Set(rawData.map(r => r.matName))].sort();
-        document.getElementById('mat-list').innerHTML = mats.map(m => `<option value="${m}">`).join('');
     }
 </script>
 </body>
