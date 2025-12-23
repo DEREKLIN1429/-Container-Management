@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>原管貨櫃管理報表 v4.1</title>
+    <title>原管貨櫃管理報表 v4.2</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
@@ -20,15 +20,13 @@
         @media (max-width: 900px) { .monitor-grid { grid-template-columns: 1fr; } }
         
         .progress-card { background: rgba(255,255,255,0.1); padding: 18px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); }
-        .truck-label { background: #3b82f6; color: white; padding: 2px 8px; border-radius: 5px; font-weight: 900; font-size: 0.85rem; }
-        .progress-info { display: flex; justify-content: space-between; margin: 8px 0; font-weight: bold; }
-        .progress-bar-bg { background: rgba(255,255,255,0.2); height: 12px; border-radius: 6px; overflow: hidden; }
+        .truck-tag { background: #3b82f6; color: white; padding: 3px 10px; border-radius: 6px; font-size: 0.9rem; font-weight: 900; }
+        .progress-bar-bg { background: rgba(255,255,255,0.2); height: 12px; border-radius: 6px; overflow: hidden; margin: 10px 0; }
         .progress-bar-fill { height: 100%; transition: width 0.5s; }
-        .kpi-row { display: flex; justify-content: space-between; font-size: 0.85rem; margin-top: 8px; }
+        .kpi-formula { font-size: 0.85rem; font-family: monospace; background: rgba(0,0,0,0.2); padding: 4px 8px; border-radius: 4px; display: block; margin-top: 8px; text-align: center; }
 
         .filter-row { background: white; padding: 20px; border-radius: 15px; margin-bottom: 25px; display: grid; grid-template-columns: repeat(3, 1fr) auto; gap: 15px; align-items: flex-end; }
         .chart-card { background: var(--white); padding: 25px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); margin-bottom: 30px; border: 1px solid var(--border); }
-        /* 調整選單位置到右邊 */
         .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .chart-container { height: 400px; width: 100%; position: relative; }
         .stat-grid-mini { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 15px; background: #f8fafc; padding: 15px; border-radius: 12px; text-align: center; }
@@ -36,13 +34,12 @@
 
         #settings-panel { position: fixed; top: 0; right: -450px; width: 350px; height: 100%; background: var(--white); z-index: 5000; transition: 0.4s; padding: 25px; box-shadow: -10px 0 30px rgba(0,0,0,0.2); overflow-y: auto; }
         #settings-panel.active { right: 0; }
-        .set-item { margin-bottom: 18px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px; }
+        .set-item { margin-bottom: 20px; border-bottom: 1px solid #f1f5f9; padding-bottom: 15px; }
         .set-item label { font-weight: bold; display: block; margin-bottom: 8px; color: #64748b; font-size: 0.85rem; }
 
         input, select { padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.95rem; }
         .btn-run { padding: 12px 30px; background: var(--accent); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; }
         #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 10px 25px; border-radius: 50px; display: none; z-index: 10000; }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -56,13 +53,16 @@
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;"><h3 id="set-title">⚙️ 設定</h3><button onclick="toggleSettings()" style="border:none; background:none; font-size:1.8rem; cursor:pointer;">&times;</button></div>
         <div class="set-item"><label id="set-ref-lbl">🔄 自動刷新秒數</label><input type="number" id="set-refresh-rate" style="width:100%;"></div>
         <div class="set-item"><label id="set-base-lbl">⏱️ 基準作業時間 (Min)</label><input type="number" id="set-base-time" style="width:100%;"><small id="avg-hint" style="color:gray;"></small></div>
+        <div class="set-item"><label>🚨 警告達成率門檻 (%)</label><input type="number" id="set-warn-threshold" style="width:100%;"></div>
+        <div class="set-item"><label>🎨 警告進度條顏色</label><input type="color" id="set-warn-color" style="width:100%; height:40px;"></div>
+        
         <div id="settings-list"></div>
         <button class="btn-run" style="width:100%; margin-top:10px;" onclick="saveSettings()" id="set-save-btn">儲存並刷新</button>
     </div>
 
     <div class="container">
         <header class="header-main">
-            <h1 class="header-title" id="main-title">原管貨櫃管理報表 v4.1</h1>
+            <h1 class="header-title" id="main-title">原管貨櫃管理報表 v4.2</h1>
             <div style="display:flex; gap:10px;">
                 <select id="ui-lang" onchange="changeLanguage()"><option value="zh">繁體中文</option><option value="en">English</option><option value="hi">हिन्दी</option></select>
                 <button onclick="toggleSettings()" style="padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:bold;">⚙️ 設定</button>
@@ -99,12 +99,12 @@
     const PUB_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQjY5PdR1CTA2gcvbeIPSFYflT2WHKWxELGliEG8c-fcCm9KlpTBlTbUIMDTCH1SieAITuY02SS65ic/pub?gid=0&single=true&output=csv";
     
     const i18n = {
-        zh: { mon: "🚚 今日貨櫃動態 (07:00-07:00)", monCount: "本日累計", start: "📅 起始日期", end: "📅 結束日期", mat: "🔍 原材料搜尋", update: "更新數據", pareto: "📊 柏拉圖分析：物料佔比", optT: "以噸數計", optC: "以次數計", cT: "📦 頻次趨勢", wT: "⚖️ 載重分析", hT: "⏱️ 卸貨時間(Min)", aT: "🔥 24H 流量分佈", l1: "總次數", l2_1: "日均次數", l2_2: "日均重量", l2_3: "平均效率", l2_4: "分布時段", l3: "總重量", l4: "總工時", monBase: "基準", monRate: "達成率", monLeft: "剩餘", monTruck: "車號", total: "加總" },
-        en: { mon: "🚚 Live Status (07:00-07:00)", monCount: "Total", start: "📅 Start Date", end: "📅 End Date", mat: "🔍 Search Material", update: "Update", pareto: "📊 Pareto Analysis", optT: "By Tonnage", optC: "By Counts", cT: "📦 Frequency", wT: "⚖️ Tonnage", hT: "⏱️ Efficiency", aT: "🔥 24H Flow", l1: "Units", l2_1: "Avg/Day", l2_2: "Avg Weight", l2_3: "Avg Eff", l2_4: "Flow Period", l3: "Total Wt", l4: "Total Hrs", monBase: "Base", monRate: "Rate", monLeft: "Left", monTruck: "Truck", total: "Total" },
-        hi: { mon: "🚚 प्रवाह (07:00-07:00)", monCount: "कुल", start: "📅 प्रारंभ", end: "📅 अंतिम", mat: "🔍 खोज", update: "अपडेट", pareto: "📊 पारेतो विश्लेषण", optT: "वजन", optC: "संख्या", cT: "📦 आगमन", wT: "⚖️ वजन", hT: "⏱️ कुशलता", aT: "🔥 24H प्रवाह", l1: "कुल", l2_1: "दैनिक", l2_2: "औसत वजन", l2_3: "कुशलता", l2_4: "अवधि", l3: "कुल वजन", l4: "घंटे", monBase: "आधार", monRate: "दर", monLeft: "शेष", monTruck: "ट्रक", total: "कुल" }
+        zh: { mon: "🚚 今日動態 (07:00-07:00)", monCount: "本日累計", start: "📅 起始", end: "📅 結束", mat: "🔍 搜尋", update: "更新", pareto: "📊 柏拉圖分析", optT: "噸數", optC: "次數", cT: "📦 頻次趨勢", wT: "⚖️ 載重分析", hT: "⏱️ 卸貨時間(Min)", aT: "🔥 24H 流量分佈", l1: "總次數", l2_1: "日均次數", l2_2: "日均重量", l2_3: "平均效率", l2_4: "分布時段", l3: "總重量", l4: "總工時", monRate: "達成率", monTruck: "車號", total: "加總" },
+        en: { mon: "🚚 Live Status (07:00-07:00)", monCount: "Today", start: "📅 Start", end: "📅 End", mat: "🔍 Search", update: "Update", pareto: "📊 Pareto", optT: "By Tons", optC: "By Counts", cT: "📦 Frequency", wT: "⚖️ Tonnage", hT: "⏱️ Unloading", aT: "🔥 24H Flow", l1: "Total", l2_1: "Avg/Day", l2_2: "Avg Weight", l2_3: "Avg Eff", l2_4: "Flow Period", l3: "Total Weight", l4: "Total Hours", monRate: "Rate", monTruck: "Truck", total: "Total" },
+        hi: { mon: "🚚 आज का प्रवाह", monCount: "कुल", start: "📅 प्रारंभ", end: "📅 अंतिम", mat: "🔍 खोज", update: "अपडेट", pareto: "📊 पारेतो विश्लेषण", optT: "वजन", optC: "संख्या", cT: "📦 आगमन", wT: "⚖️ वजन", hT: "⏱️ कुशलता", aT: "🔥 24H प्रवाह", l1: "कुल", l2_1: "दैनिक", l2_2: "औसत वजन", l2_3: "कुशलता", l2_4: "अवधि", l3: "कुल वजन", l4: "घंटे", monRate: "दर", monTruck: "ट्रक", total: "कुल" }
     };
 
-    let rawData = [], charts = {}, lastDayMap = {}, lastMatStats = {}, avgWorkTime = 60, hFlowData = Array(24).fill(0);
+    let rawData = [], charts = {}, lastDayMap = {}, lastMatStats = {}, avgWorkTime = 60, gFlow = Array(24).fill(0);
     let refreshTimer = null, countdown = 0;
     const chartConfigs = [{id:1, key:"counts", def:"bar"}, {id:2, key:"tons", def:"area"}, {id:3, key:"hours", def:"stepped"}, {id:4, key:"flow", def:"radar"}];
 
@@ -113,41 +113,17 @@
         document.getElementById('date-start').value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
         document.getElementById('date-end').value = now.toISOString().split('T')[0];
         document.getElementById('mon-date').value = now.toISOString().split('T')[0];
+        
+        // 載入 localStorage 設定
         document.getElementById('set-refresh-rate').value = localStorage.getItem('set_refresh_rate') || '600';
         document.getElementById('set-base-time').value = localStorage.getItem('set_base_time') || '';
+        document.getElementById('set-warn-threshold').value = localStorage.getItem('set_warn_threshold') || '95';
+        document.getElementById('set-warn-color').value = localStorage.getItem('set_warn_color') || '#ef4444';
+        
         changeLanguage();
         await fetchPublishedData();
         startAutoRefresh();
     };
-
-    function changeLanguage() {
-        const l = document.getElementById('ui-lang').value;
-        const d = i18n[l];
-        document.getElementById('mon-title').innerText = d.mon;
-        document.getElementById('lbl-start').innerText = d.start;
-        document.getElementById('lbl-end').innerText = d.end;
-        document.getElementById('lbl-mat').innerText = d.mat;
-        document.getElementById('btn-update').innerText = d.update;
-        document.getElementById('tit-pareto').innerText = d.pareto;
-        document.getElementById('opt-tons').innerText = d.optT;
-        document.getElementById('opt-counts').innerText = d.optC;
-        initDynamicUI();
-        if(rawData.length > 0) generateReport();
-    }
-
-    function initDynamicUI() {
-        const l = document.getElementById('ui-lang').value;
-        const d = i18n[l];
-        const names = [d.cT, d.wT, d.hT, d.aT];
-        let html = '', setHtml = '';
-        chartConfigs.forEach((conf, idx) => {
-            const savedType = localStorage.getItem(`def_type_${conf.id}`) || conf.def;
-            html += `<div class="chart-card" id="card-${conf.id}"><div class="chart-header"><div style="font-weight:bold;">${names[idx]}</div><select id="type-${conf.id}" onchange="renderModule(${conf.id})"><option value="bar" ${savedType==='bar'?'selected':''}>Bar</option><option value="line" ${savedType==='line'?'selected':''}>Line</option><option value="area" ${savedType==='area'?'selected':''}>Area</option><option value="stepped" ${savedType==='stepped'?'selected':''}>Stepped</option><option value="radar" ${savedType==='radar'?'selected':''}>Radar</option></select></div><div class="chart-container"><canvas id="canvas-${conf.id}"></canvas></div><div id="box-${conf.id}" class="stat-grid-mini"></div></div>`;
-            setHtml += `<div class="set-item"><label>${names[idx]}</label><select id="set-type-${conf.id}" style="width:100%;"><option value="bar" ${savedType==='bar'?'selected':''}>Bar</option><option value="line" ${savedType==='line'?'selected':''}>Line</option><option value="area" ${savedType==='area'?'selected':''}>Area</option><option value="stepped" ${savedType==='stepped'?'selected':''}>Stepped</option><option value="radar" ${savedType==='radar'?'selected':''}>Radar</option></select></div>`;
-        });
-        document.getElementById('dynamic-charts').innerHTML = html;
-        document.getElementById('settings-list').innerHTML = setHtml;
-    }
 
     async function fetchPublishedData() {
         document.getElementById('loading').style.display = 'flex';
@@ -166,70 +142,22 @@
         return csv.split(/\r?\n/).slice(1).map(l => {
             const c = l.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
             if (c.length < 11) return null;
-            return { truck: c[0]||"", mat: c[1]||"", arrival: c[2], end: c[3], total: parseFloat(c[4])||0, wt: parseFloat(c[10])||0 };
-        }).filter(x => x && x.mat);
+            // 修正：抓取 Truck No (c[0]) 與 Material Name (c[1])
+            return { 
+                truckNo: c[0] || "Unknown", 
+                matName: c[1] || "N/A", 
+                arrivalTime: c[2], 
+                endTime: c[3], 
+                totalTime: parseFloat(c[4]) || 0, 
+                weight: parseFloat(c[10]) || 0 
+            };
+        }).filter(x => x && x.matName !== "N/A");
     }
 
     function calculateAvg() {
-        const t = rawData.map(r => r.total).filter(v => v > 0);
+        const t = rawData.map(r => r.totalTime).filter(v => v > 0);
         avgWorkTime = t.length ? Math.round(t.reduce((a,b)=>a+b, 0) / t.length) : 60;
         document.getElementById('avg-hint').innerText = `每月平均: ${avgWorkTime} Min`;
-    }
-
-    function generateReport() {
-        const start = new Date(document.getElementById('date-start').value); start.setHours(0,0,0,0);
-        const end = new Date(document.getElementById('date-end').value); end.setHours(23,59,59,999);
-        const filter = document.getElementById('mat-filter').value.toLowerCase();
-        lastDayMap = {}; lastMatStats = {}; hFlowData = Array(24).fill(0);
-        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) lastDayMap[d.toISOString().split('T')[0]] = { tons: 0, hours: 0, counts: 0 };
-        
-        rawData.forEach(r => {
-            const m = r.arrival?.match(/(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})/);
-            if (m) {
-                const dObj = new Date(m[3], m[2]-1, m[1], m[4], m[5]);
-                if (!lastMatStats[r.mat]) lastMatStats[r.mat] = { counts:0, tons:0 };
-                lastMatStats[r.mat].counts++; lastMatStats[r.mat].tons += r.wt/1000;
-                const dKey = dObj.toISOString().split('T')[0];
-                if (dObj >= start && dObj <= end) {
-                    if (lastDayMap[dKey] && (!filter || r.mat.toLowerCase().includes(filter))) {
-                        lastDayMap[dKey].counts++; lastDayMap[dKey].tons += r.wt/1000; lastDayMap[dKey].hours += r.total; hFlowData[dObj.getHours()]++;
-                    }
-                }
-            }
-        });
-        renderPareto(); chartConfigs.forEach(conf => renderModule(conf.id));
-    }
-
-    function renderPareto() {
-        const canvas = document.getElementById('canvas-0');
-        const source = document.getElementById('source-0').value;
-        const l = document.getElementById('ui-lang').value;
-        if (charts[0]) charts[0].destroy();
-        let items = Object.keys(lastMatStats).filter(k => k !== "" && k !== "N/A").map(k => ({ label: k, value: lastMatStats[k][source] })).sort((a,b) => b.value - a.value).slice(0, 10);
-        const totalSum = Math.round(items.reduce((a,b)=>a+b.value, 0));
-        document.getElementById('pareto-total').innerText = `∑ ${i18n[l].total}: ${totalSum}${source==='tons'?' T':''}`;
-        let acc = 0; const sum = items.reduce((x,y)=>x+y.value,0);
-        charts[0] = new Chart(canvas.getContext('2d'), {
-            type: 'bar',
-            data: { labels: items.map(i=>i.label), datasets: [{ data: items.map(i=>i.value), backgroundColor: '#2196F3', borderRadius: 5, yAxisID: 'y' }, { data: items.map(i => { acc+=i.value; return (acc/sum)*100; }), type: 'line', borderColor: '#ef4444', yAxisID: 'y1' }] },
-            options: { responsive: true, maintainAspectRatio: false, layout: { padding: { top: 45 } }, plugins: { legend: { display: false }, datalabels: { display: 'auto', anchor: 'end', align: 'top', clip: false, formatter: Math.round } }, scales: { y: { beginAtZero: true }, y1: { position: 'right', max: 100, grid: { drawOnChartArea: true, color: 'rgba(239,68,68,0.1)', borderDash:[5,5] } } } }
-        });
-    }
-
-    function renderModule(idx) {
-        const canvas = document.getElementById(`canvas-${idx}`);
-        const type = document.getElementById(`type-${idx}`).value;
-        if (charts[idx]) charts[idx].destroy();
-        const conf = chartConfigs.find(c => c.id === idx);
-        const color = idx === 1 ? '#10b981' : (idx === 2 ? '#2196F3' : (idx === 3 ? '#f59e0b' : '#8b5cf6'));
-        let labels = (idx === 4) ? Array.from({length:24}, (_,i)=>i+'h') : Object.keys(lastDayMap).sort();
-        let data = (idx === 4) ? hFlowData : labels.map(l => lastDayMap[l][conf.key]);
-        charts[idx] = new Chart(canvas.getContext('2d'), {
-            type: type === 'stepped' || type === 'area' ? 'line' : type,
-            data: { labels: labels, datasets: [{ data: data, borderColor: color, stepped: type === 'stepped', fill: type === 'area', backgroundColor: type === 'bar' ? color : color + '33', tension: 0.4 }] },
-            options: { responsive: true, maintainAspectRatio: false, layout: { padding: { top: 45 } }, plugins: { legend: { display: false }, datalabels: { display: 'auto', anchor: 'end', align: 'top', clip: false, formatter: Math.round } }, scales: type==='radar'?{r:{suggestMin:0}}:{y:{beginAtZero: true}} }
-        });
-        updateAnalysis(idx);
     }
 
     function renderTodayMonitor() {
@@ -238,39 +166,123 @@
         const selDate = new Date(document.getElementById('mon-date').value);
         let start = new Date(selDate); start.setHours(7,0,0,0);
         let end = new Date(start); end.setDate(end.getDate()+1);
+        
         const base = parseInt(localStorage.getItem('set_base_time')) || avgWorkTime;
+        const threshold = parseInt(localStorage.getItem('set_warn_threshold')) || 95;
+        const alertColor = localStorage.getItem('set_warn_color') || '#ef4444';
+
         const items = rawData.filter(r => {
-            const m = r.arrival?.match(/(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})/);
+            const m = r.arrivalTime?.match(/(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})/);
             if(!m) return false;
             const dObj = new Date(m[3], m[2]-1, m[1], m[4], m[5]);
             return dObj >= start && dObj < end;
         });
+
         document.getElementById('monitor-count').innerText = `${d.monCount}: ${items.length}`;
         document.getElementById('monitor-list').innerHTML = items.map(i => {
-            const done = i.end && i.end.trim() !== "";
-            const per = Math.min((i.total / base) * 100, 100);
-            let kpi = done ? `✅ ${d.monRate}: ${Math.round((base/i.total)*100)}%` : (i.total > base ? `🚨 ${d.monRate}: ${Math.round((base/i.total)*100)}%` : `⏳ ${Math.round(base-i.total)}m`);
+            const isDone = i.endTime && i.endTime.trim() !== "";
+            const used = i.totalTime;
+            const rate = Math.round((base / used) * 100);
+            const per = Math.min((used / base) * 100, 100);
+            
+            // 判定顏色
+            const barColor = (rate < threshold) ? alertColor : (isDone ? '#4CAF50' : '#2196F3');
+
             return `<div class="progress-card">
-                <div style="display:flex; justify-content:space-between; align-items:center;"><span class="truck-label">${d.monTruck}. ${i.truck}</span><span style="font-size:0.75rem; opacity:0.6;">${i.arrival.split(' ')[1]}</span></div>
-                <div class="progress-info"><span>${i.mat}</span><span>${i.total}m</span></div>
-                <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${per}%; background:${done?'#4CAF50':(i.total>base?'#ef4444':'#2196F3')}"></div></div>
-                <div class="kpi-row"><span>${d.monBase}: ${base}m</span><span style="font-weight:bold;">${kpi}</span></div>
+                <div style="display:flex; justify-content:space-between; align-items:center;"><span class="truck-tag">${d.monTruck}: ${i.truckNo}</span><span style="font-size:0.75rem; opacity:0.6;">${i.arrivalTime.split(' ')[1]}</span></div>
+                <div style="margin-top:8px; font-weight:bold;">${i.matName}</div>
+                <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${per}%; background:${barColor}"></div></div>
+                <div class="kpi-formula" style="color:${rate < threshold ? alertColor : 'inherit'}">
+                    ${used}m / ${base}m = ${isDone ? '✅' : '⏳'} ${d.monRate}: ${rate}%
+                </div>
             </div>`;
         }).join('');
     }
 
+    function initDynamicUI() {
+        const l = document.getElementById('ui-lang').value;
+        const d = i18n[l];
+        const names = [d.cT, d.wT, d.hT, d.aT];
+        let html = '', setHtml = '';
+        chartConfigs.forEach((conf, idx) => {
+            const savedType = localStorage.getItem(`def_type_${conf.id}`) || conf.def;
+            html += `<div class="chart-card" id="card-${conf.id}"><div class="chart-header"><div style="font-weight:bold;">${names[idx]}</div><select id="type-${conf.id}" onchange="renderModule(${conf.id})"><option value="bar" ${savedType==='bar'?'selected':''}>Bar</option><option value="line" ${savedType==='line'?'selected':''}>Line</option><option value="area" ${savedType==='area'?'selected':''}>Area</option><option value="stepped" ${savedType==='stepped'?'selected':''}>Stepped</option><option value="radar" ${savedType==='radar'?'selected':''}>Radar</option></select></div><div class="chart-container"><canvas id="canvas-${conf.id}"></canvas></div><div id="box-${conf.id}" class="stat-grid-mini"></div></div>`;
+            setHtml += `<div class="set-item"><label>${names[idx]}</label><select id="set-type-${conf.id}" style="width:100%;"><option value="bar" ${savedType==='bar'?'selected':''}>Bar</option><option value="line" ${savedType==='line'?'selected':''}>Line</option><option value="area" ${savedType==='area'?'selected':''}>Area</option><option value="stepped" ${savedType==='stepped'?'selected':''}>Stepped</option><option value="radar" ${savedType==='radar'?'selected':''}>Radar</option></select></div>`;
+        });
+        document.getElementById('dynamic-charts').innerHTML = html;
+        document.getElementById('settings-list').innerHTML = setHtml;
+    }
+
+    function generateReport() {
+        const start = new Date(document.getElementById('date-start').value); start.setHours(0,0,0,0);
+        const end = new Date(document.getElementById('date-end').value); end.setHours(23,59,59,999);
+        const filter = document.getElementById('mat-filter').value.toLowerCase();
+        lastDayMap = {}; lastMatStats = {}; gFlow = Array(24).fill(0);
+        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) lastDayMap[d.toISOString().split('T')[0]] = { tons: 0, hours: 0, counts: 0 };
+        
+        rawData.forEach(r => {
+            const m = r.arrivalTime?.match(/(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})/);
+            if (m) {
+                const dObj = new Date(m[3], m[2]-1, m[1], m[4], m[5]);
+                const mat = r.matName;
+                if (!lastMatStats[mat]) lastMatStats[mat] = { counts:0, tons:0 };
+                lastMatStats[mat].counts++; lastMatStats[mat].tons += r.weight/1000;
+                const dKey = dObj.toISOString().split('T')[0];
+                if (dObj >= start && dObj <= end) {
+                    if (lastDayMap[dKey] && (!filter || mat.toLowerCase().includes(filter))) {
+                        lastDayMap[dKey].counts++; lastDayMap[dKey].tons += r.weight/1000; lastDayMap[dKey].hours += r.totalTime; gFlow[dObj.getHours()]++;
+                    }
+                }
+            }
+        });
+        lastLabels = Object.keys(lastDayMap).sort();
+        renderPareto(); chartConfigs.forEach(conf => renderModule(conf.id));
+    }
+
+    function renderModule(idx) {
+        const canvas = document.getElementById(`canvas-${idx}`);
+        const type = document.getElementById(`type-${idx}`).value;
+        if (charts[idx]) charts[idx].destroy();
+        const conf = chartConfigs.find(c => c.id === idx);
+        const color = idx === 1 ? '#10b981' : (idx === 2 ? '#2196F3' : (idx === 3 ? '#f59e0b' : '#8b5cf6'));
+        let labels = (idx === 4) ? Array.from({length:24}, (_,i)=>i+'h') : lastLabels;
+        let data = (idx === 4) ? gFlow : labels.map(l => lastDayMap[l][conf.key]);
+        charts[idx] = new Chart(canvas.getContext('2d'), {
+            type: type === 'stepped' || type === 'area' ? 'line' : type,
+            data: { labels: labels, datasets: [{ data: data, borderColor: color, stepped: type === 'stepped', fill: type === 'area', backgroundColor: type === 'bar' ? color : color + '33', tension: 0.4 }] },
+            options: { responsive: true, maintainAspectRatio: false, layout: { padding: { top: 45 } }, plugins: { datalabels: { display: 'auto', anchor: 'end', align: 'top', clip: false, formatter: Math.round }, legend: { display: false } }, scales: type==='radar'?{r:{suggestMin:0}}:{y:{beginAtZero: true}} }
+        });
+        updateAnalysis(idx);
+    }
+
+    function renderPareto() {
+        const canvas = document.getElementById('canvas-0');
+        const source = document.getElementById('source-0').value;
+        const l = document.getElementById('ui-lang').value;
+        if (charts[0]) charts[0].destroy();
+        let items = Object.keys(lastMatStats).filter(k => k && k !== "N/A").map(k => ({ label: k, value: lastMatStats[k][source] })).sort((a,b) => b.value - a.value).slice(0, 10);
+        const total = Math.round(items.reduce((a,b)=>a+b.value, 0));
+        document.getElementById('pareto-total').innerText = `∑ ${i18n[l].total}: ${total}${source==='tons'?' T':''}`;
+        let acc = 0; const sum = items.reduce((x,y)=>x+y.value,0);
+        charts[0] = new Chart(canvas.getContext('2d'), {
+            type: 'bar',
+            data: { labels: items.map(i=>i.label), datasets: [{ data: items.map(i=>i.value), backgroundColor: '#2196F3', yAxisID: 'y' }, { data: items.map(i => { acc+=i.value; return (acc/sum)*100; }), type: 'line', borderColor: '#ef4444', yAxisID: 'y1' }] },
+            options: { responsive: true, maintainAspectRatio: false, layout: { padding: { top: 45 } }, plugins: { legend: { display: false }, datalabels: { display: 'auto', anchor: 'end', align: 'top', clip: false, formatter: Math.round } }, scales: { y: { beginAtZero: true }, y1: { position: 'right', max: 100, grid: { drawOnChartArea: true, color: 'rgba(239,68,68,0.1)', borderDash:[5,5] } } } }
+        });
+    }
+
     function updateAnalysis(idx) {
         const d = i18n[document.getElementById('ui-lang').value];
-        const days = Object.keys(lastDayMap).length || 1;
-        const totalC = Object.keys(lastDayMap).reduce((a, k) => a + lastDayMap[k].counts, 0);
-        const totalT = Object.keys(lastDayMap).reduce((a, k) => a + lastDayMap[k].tons, 0);
-        const totalH = Object.keys(lastDayMap).reduce((a, k) => a + lastDayMap[k].hours, 0);
+        const days = lastLabels.length || 1;
+        const totalC = lastLabels.reduce((a, k) => a + lastDayMap[k].counts, 0);
+        const totalT = lastLabels.reduce((a, k) => a + lastDayMap[k].tons, 0);
+        const totalH = lastLabels.reduce((a, k) => a + lastDayMap[k].hours, 0);
         const box = document.getElementById(`box-${idx}`);
         if(!box) return;
         let l2Label = d.l2_3, l2Val = totalC>0?Math.round(totalH/totalC)+'m':0;
         if(idx===1) { l2Label = d.l2_1; l2Val = (totalC/days).toFixed(1); }
         if(idx===2) { l2Label = d.l2_2; l2Val = (totalT/days).toFixed(1) + 'T'; }
-        if(idx===4) { l2Label = d.l2_4; const p = hFlowData.map((v,i)=>v>0?i:-1).filter(i=>i!==-1); l2Val = p.length?`${Math.min(...p)}h-${Math.max(...p)}h`:"-"; }
+        if(idx===4) { l2Label = d.l2_4; const p = gFlow.map((v,i)=>v>0?i:-1).filter(i=>i!==-1); l2Val = p.length?`${Math.min(...p)}h-${Math.max(...p)}h`:"-"; }
         box.innerHTML = `<div><small>${d.l1}</small><div class="stat-num">${totalC}</div></div><div><small>${l2Label}</small><div class="stat-num">${l2Val}</div></div><div><small>${d.l3}</small><div class="stat-num">${Math.round(totalT)}T</div></div><div><small>${d.l4}</small><div class="stat-num">${Math.round(totalH)}m</div></div>`;
     }
 
@@ -289,11 +301,13 @@
     function saveSettings() {
         localStorage.setItem('set_refresh_rate', document.getElementById('set-refresh-rate').value);
         localStorage.setItem('set_base_time', document.getElementById('set-base-time').value);
+        localStorage.setItem('set_warn_threshold', document.getElementById('set-warn-threshold').value);
+        localStorage.setItem('set_warn_color', document.getElementById('set-warn-color').value);
         chartConfigs.forEach(conf => localStorage.setItem(`def_type_${conf.id}`, document.getElementById(`set-type-${conf.id}`).value));
         location.reload();
     }
     function updateMatDatalist() {
-        const mats = [...new Set(rawData.map(r => r.mat))].sort();
+        const mats = [...new Set(rawData.map(r => r.matName))].sort();
         document.getElementById('mat-list').innerHTML = mats.map(m => `<option value="${m}">`).join('');
     }
     async function copyChart(id) {
