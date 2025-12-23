@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>原管貨櫃管理報表 v6.1</title>
+    <title>原管貨櫃管理報表 v6.2</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
@@ -13,38 +13,30 @@
         .container { max-width: 1400px; margin: 0 auto; width: 100%; }
         .header-main { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 25px; border-bottom: 3px solid var(--accent); padding-bottom: 10px; }
         .header-title { font-size: 2.2rem; font-weight: 900; color: var(--accent); margin: 0; }
-        
-        /* 監控區域樣式 */
         .today-monitor { background: var(--accent); color: white; padding: 25px; border-radius: 20px; margin-bottom: 25px; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
         .monitor-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
         .total-avg-kpi { padding: 10px 20px; border-radius: 12px; font-weight: 900; font-size: 1.1rem; color: white; transition: background 0.3s; background: var(--primary); }
         .monitor-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; max-height: 500px; overflow-y: auto; padding-right: 10px; }
         @media (max-width: 900px) { .monitor-grid { grid-template-columns: 1fr; } }
-        
         .progress-card { background: rgba(255,255,255,0.1); padding: 18px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); }
         .truck-tag { background: #3b82f6; color: white; padding: 3px 10px; border-radius: 6px; font-size: 0.95rem; font-weight: 900; }
         .time-info-row { display: flex; justify-content: space-between; margin-top: 10px; font-size: 0.85rem; background: rgba(255,255,255,0.05); padding: 5px 10px; border-radius: 8px; }
         .progress-bar-bg { background: rgba(255,255,255,0.2); height: 14px; border-radius: 7px; overflow: hidden; margin: 12px 0 8px 0; }
         .progress-bar-fill { height: 100%; transition: width 0.5s; }
         .kpi-formula { font-size: 1.1rem; font-weight: 900; font-family: 'Consolas', monospace; background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 8px; display: block; margin-top: 10px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
-
+        .pareto-stats-bar { display: flex; gap: 15px; margin-top: 8px; flex-wrap: wrap; }
+        .pareto-stat-item { font-size: 0.85rem; font-weight: 900; color: var(--primary); background: #f0f7ff; padding: 4px 10px; border-radius: 6px; border: 1px solid #d0e4ff; }
         .filter-row { background: white; padding: 20px; border-radius: 15px; margin-bottom: 25px; display: grid; grid-template-columns: repeat(3, 1fr) auto; gap: 15px; align-items: flex-end; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         .chart-card { background: var(--white); padding: 25px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); margin-bottom: 30px; border: 1px solid var(--border); }
         .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .chart-container { height: 400px; width: 100%; position: relative; }
         .stat-grid-mini { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 15px; background: #f8fafc; padding: 15px; border-radius: 12px; text-align: center; }
         .stat-num { font-weight: 800; color: var(--primary); font-size: 1.05rem; }
-
-        /* 柏拉圖指標 */
-        .pareto-stats-bar { display: flex; gap: 15px; margin-top: 8px; flex-wrap: wrap; }
-        .pareto-stat-item { font-size: 0.85rem; font-weight: 900; color: var(--primary); background: #f0f7ff; padding: 4px 10px; border-radius: 6px; border: 1px solid #d0e4ff; }
-
         #settings-panel { position: fixed; top: 0; right: -450px; width: 350px; height: 100%; background: var(--white); z-index: 5000; transition: 0.4s; padding: 25px; box-shadow: -10px 0 30px rgba(0,0,0,0.2); overflow-y: auto; }
         #settings-panel.active { right: 0; }
         .set-item { margin-bottom: 20px; border-bottom: 1px solid #f1f5f9; padding-bottom: 15px; }
         input, select { padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.95rem; }
         .btn-run { padding: 12px 30px; background: var(--accent); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; }
-        
         #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
     </style>
@@ -53,7 +45,7 @@
 
     <div id="loading">
         <div style="border:5px solid #f3f3f3; border-top:5px solid #2196F3; border-radius:50%; width:45px; height:45px; animation:spin 1s linear infinite;"></div>
-        <p style="margin-top:10px; font-weight:bold;">資料加載中...</p>
+        <p style="margin-top:10px; font-weight:bold;">同步數據中...</p>
     </div>
 
     <div id="settings-panel">
@@ -62,13 +54,13 @@
         <div class="set-item"><label id="lbl-set-base">⏱️ Benchmark Time (Min)</label><input type="number" id="set-base-time" style="width:100%;"><small id="avg-hint" style="color:var(--primary); font-weight:bold;"></small></div>
         <div class="set-item"><label id="lbl-set-threshold">🚨 Warning Threshold (%)</label><input type="number" id="set-warn-threshold" style="width:100%;"></div>
         <div class="set-item"><label id="lbl-set-color">🎨 Warning Color</label><input type="color" id="set-warn-color" style="width:100%; height:40px;"></div>
-        <div id="settings-list"></div>
+        <div id="settings-chart-types"></div>
         <button class="btn-run" style="width:100%; margin-top:10px;" onclick="saveSettings()" id="set-save-btn">Save</button>
     </div>
 
     <div class="container">
         <header class="header-main">
-            <h1 class="header-title" id="main-title">原管貨櫃管理報表 v6.1</h1>
+            <h1 class="header-title" id="main-title">原管貨櫃管理報表 v6.2</h1>
             <div style="display:flex; gap:10px;">
                 <select id="ui-lang" onchange="changeLanguage()"><option value="zh">繁體中文</option><option value="en">English</option><option value="hi">हिन्दी</option></select>
                 <button onclick="toggleSettings()" id="btn-settings" style="padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:bold;">⚙️ 設定</button>
@@ -77,7 +69,7 @@
 
         <div class="today-monitor">
             <div class="monitor-header">
-                <div style="display:flex; align-items:center; gap:15px;"><h2 id="mon-title">🚚 今日動態 (07:00-07:00)</h2><input type="date" id="mon-date" onchange="renderTodayMonitor()"></div>
+                <div style="display:flex; align-items:center; gap:15px;"><h2 id="mon-title">🚚 今日動態</h2><input type="date" id="mon-date" onchange="renderTodayMonitor()"></div>
                 <div style="display:flex; align-items:center; gap:15px;">
                     <div id="total-avg-rate" class="total-avg-kpi">Avg Rate: --%</div>
                     <div style="text-align:right;"><div id="monitor-count-label">...</div><div id="refresh-timer" style="font-size:0.8rem; opacity:0.7;"></div></div>
@@ -115,15 +107,14 @@
     const PUB_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQjY5PdR1CTA2gcvbeIPSFYflT2WHKWxELGliEG8c-fcCm9KlpTBlTbUIMDTCH1SieAITuY02SS65ic/pub?gid=0&single=true&output=csv";
     
     const i18n = {
-        zh: { mon: "🚚 今日動態 (07:00-07:00)", monCount: "本日累計車次", avgRate: "本日平均達成率", pareto: "📊 柏拉圖分析", rTotal: "TOP 10 加總", gTotal: "日期區間重量加總", cT: "📦 頻次趨勢", wT: "⚖️ 載重分析", hT: "⏱️ 效率分析", aT: "🔥 流量分佈", l1: "總次數", l2_1: "日均次數", l2_2: "日均重量", l2_3: "平均效率", l2_4: "工作時間分佈", l3: "總重量", l4: "總工時", monRate: "達成率", monTruck: "車號", optT: "以噸數計", optC: "以次數計", tIn: "進場時間", tOut: "出場時間", optSumH: "每日總工時", optAvgH: "每日平均時間", typeNames: {bar:"長條圖", line:"折線圖", area:"面積圖", stepped:"階梯圖", radar:"雷達圖"} },
-        en: { mon: "🚚 Live Status", monCount: "Total Units", avgRate: "Daily Avg Rate", pareto: "📊 Pareto", rTotal: "TOP 10 Sum", gTotal: "Range Total", cT: "📦 Frequency", wT: "⚖️ Tonnage", hT: "⏱️ Efficiency", aT: "🔥 24H Flow", l1: "Total Units", l2_1: "Daily Avg", l2_2: "Avg Weight", l2_3: "Avg Eff", l2_4: "Work Period", l3: "Total Wt", l4: "Total Hrs", monRate: "Rate", monTruck: "Truck", optT: "By Tonnage", optC: "By Counts", tIn: "Entry", tOut: "Exit", optSumH: "Total Hours", optAvgH: "Avg Time", typeNames: {bar:"Bar Chart", line:"Line Chart", area:"Area Chart", stepped:"Stepped", radar:"Radar Chart"} },
-        hi: { mon: "🚚 प्रवाह", monCount: "कुल इकाइयां", avgRate: "औसत दर", pareto: "📊 पारेतो", rTotal: "शीर्ष 10 कुल", gTotal: "कुल वजन", cT: "📦 आवृत्ति", wT: "⚖️ वजन", hT: "⏱️ कुशलता", aT: "🔥 प्रवाह", l1: "कुल इकाइयां", l2_1: "दैनिक", l2_2: "औसत", l2_3: "कुशलता", l2_4: "समय", l3: "कुल वजन", l4: "घंटे", monRate: "दर", monTruck: "ट्रक", optT: "वजन", optC: "संख्या", tIn: "प्रवेश", tOut: "निकास", optSumH: "कुल घंटे", optAvgH: "औसत समय", typeNames: {bar:"बार", line:"लाइन", area:"क्षेत्र", stepped:"स्टेप्ड", radar:"रडार"} }
+        zh: { mon: "🚚 今日動態 (07:00-07:00)", monCount: "本日累計車次", avgRate: "本日平均達成率", pareto: "📊 柏拉圖分析", rTotal: "TOP 10 加總", gTotal: "日期區間重量加總", cT: "📦 頻次趨勢", wT: "⚖️ 載重分析", hT: "⏱️ 效率分析", aT: "🔥 流量分佈", l1: "總次數", l2_1: "日均次數", l2_2: "日均重量", l2_3: "平均效率", l2_4: "工作時間分佈", l3: "總重量", l4: "總工時", monRate: "達成率", monTruck: "車號", optT: "以噸數計", optC: "以次數計", tIn: "進場", tOut: "出場", optSumH: "每日總工時", optAvgH: "每日每車平均", typeNames: {bar:"長條圖", line:"折線圖", area:"面積圖", stepped:"階梯圖", radar:"雷達圖"} },
+        en: { mon: "🚚 Live Status", monCount: "Today Total", avgRate: "Daily Avg Rate", pareto: "📊 Pareto", rTotal: "TOP 10 Sum", gTotal: "Range Total Weight", cT: "📦 Frequency", wT: "⚖️ Tonnage", hT: "⏱️ Efficiency", aT: "🔥 24H Flow", l1: "Total Units", l2_1: "Daily Avg", l2_2: "Avg Wt", l2_3: "Avg Eff", l2_4: "Work Period", l3: "Total Weight", l4: "Total Hrs", monRate: "Rate", monTruck: "Truck", optT: "By Tons", optC: "By Counts", tIn: "In", tOut: "Out", optSumH: "Daily Total Hrs", optAvgH: "Daily Avg Time", typeNames: {bar:"Bar Chart", line:"Line Chart", area:"Area Chart", stepped:"Stepped", radar:"Radar Chart"} },
+        hi: { mon: "🚚 आज का प्रवाह", monCount: "कुल इकाइयां", avgRate: "औसत दर", pareto: "📊 पारेतो", rTotal: "शीर्ष 10 कुल", gTotal: "श्रेणी कुल वजन", cT: "📦 आवृत्ति", wT: "⚖️ वजन", hT: "⏱️ कुशलता", aT: "🔥 प्रवाह", l1: "कुल इकाइयां", l2_1: "दैनिक", l2_2: "औसत वजन", l2_3: "कुशलता", l2_4: "समय अवधि", l3: "कुल वजन", l4: "कुल घंटे", monRate: "दर", monTruck: "ट्रक", optT: "वजन", optC: "संख्या", tIn: "प्रवेश", tOut: "निकास", optSumH: "कुल घंटे", optAvgH: "औसत समय", typeNames: {bar:"बार", line:"लाइन", area:"क्षेत्र", stepped:"स्टेप्ड", radar:"रडार"} }
     };
 
     let rawData = [], charts = {}, lastDayMap = {}, filteredMatStats = {}, avgWorkTime = 60, gFlow = Array(24).fill(0), totalRangeVolume = {tons:0, counts:0, hours:0};
     const chartConfigs = [{id:1, key:"counts", def:"bar"}, {id:2, key:"tons", def:"area"}, {id:3, key:"hours", def:"stepped"}, {id:4, key:"flow", def:"radar"}];
 
-    // 初始化：確保元素存在
     window.onload = async () => {
         const now = new Date();
         document.getElementById('date-start').value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
@@ -147,17 +138,10 @@
             const res = await fetch(PUB_URL + "&cb=" + Date.now());
             const text = await res.text();
             rawData = parseCSV(text);
-            if (rawData.length > 0) {
-                generateReport(); 
-                renderTodayMonitor();
-            } else {
-                console.warn("No data available");
-            }
-        } catch (e) { 
-            console.error("Fetch failed", e); 
-        } finally {
-            load.style.display = 'none';
-        }
+            generateReport(); 
+            renderTodayMonitor();
+        } catch (e) { console.error("Fetch failed", e); }
+        finally { load.style.display = 'none'; }
     }
 
     function parseCSV(csv) {
@@ -176,21 +160,35 @@
         }).filter(x => x && x.arrivalTime);
     }
 
+    // 修正：精準提取 YYYY-MM-DD，避開時區造成與 Excel 不同步
+    function getCleanDate(str) {
+        if (!str) return null;
+        const match = str.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+        if (match) return `${match[3]}-${match[2]}-${match[1]}`; // 返回 YYYY-MM-DD
+        return null;
+    }
+
     function generateReport() {
-        const start = new Date(document.getElementById('date-start').value); start.setHours(0,0,0,0);
-        const end = new Date(document.getElementById('date-end').value); end.setHours(23,59,59,999);
+        const start = document.getElementById('date-start').value;
+        const end = document.getElementById('date-end').value;
         const filter = document.getElementById('mat-filter').value.toLowerCase();
         
-        lastDayMap = {}; filteredMatStats = {}; gFlow = Array(24).fill(0); totalRangeVolume = {tons:0, counts:0, hours:0};
-        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) lastDayMap[d.toISOString().split('T')[0]] = { tons: 0, hours: 0, counts: 0 };
+        lastDayMap = {}; filteredMatStats = {}; gFlow = Array(24).fill(0); 
+        totalRangeVolume = {tons:0, counts:0, hours:0};
+
+        // 初始化日期 Map
+        let cur = new Date(start);
+        const endD = new Date(end);
+        while(cur <= endD) {
+            lastDayMap[cur.toISOString().split('T')[0]] = { tons: 0, hours: 0, counts: 0 };
+            cur.setDate(cur.getDate() + 1);
+        }
         
         rawData.forEach(r => {
-            const m = r.arrivalTime?.match(/(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})/);
-            if (m) {
-                const dObj = new Date(m[3], m[2]-1, m[1], m[4], m[5]);
-                const dKey = dObj.toISOString().split('T')[0];
-                if (dObj >= start && dObj <= end) {
-                    // 以 C 欄日期基準進行全場統計
+            const dateStr = getCleanDate(r.arrivalTime);
+            if (dateStr) {
+                if (dateStr >= start && dateStr <= end) {
+                    // 修正：每日數據累加邏輯，精確對應 C 欄日期與 K, E 欄位
                     totalRangeVolume.tons += r.weight/1000;
                     totalRangeVolume.counts++;
                     totalRangeVolume.hours += r.totalTime;
@@ -199,18 +197,21 @@
                     filteredMatStats[r.matName].counts++; 
                     filteredMatStats[r.matName].tons += r.weight/1000;
                     
-                    if (lastDayMap[dKey] && (!filter || r.matName.toLowerCase().includes(filter))) {
-                        lastDayMap[dKey].counts++; 
-                        lastDayMap[dKey].tons += r.weight/1000; 
-                        lastDayMap[dKey].hours += r.totalTime; 
-                        gFlow[dObj.getHours()]++;
+                    if (lastDayMap[dateStr] && (!filter || r.matName.toLowerCase().includes(filter))) {
+                        lastDayMap[dateStr].counts++; 
+                        lastDayMap[dateStr].tons += r.weight/1000; 
+                        lastDayMap[dateStr].hours += r.totalTime; 
+                        
+                        // 提取小時
+                        const hMatch = r.arrivalTime.match(/(\d{2}):(\d{2})/);
+                        if (hMatch) gFlow[parseInt(hMatch[1])]++;
                     }
                 }
             }
         });
+
         avgWorkTime = totalRangeVolume.counts > 0 ? Math.round(totalRangeVolume.hours / totalRangeVolume.counts) : 60;
-        const hint = document.getElementById('avg-hint');
-        if (hint) hint.innerText = `區間平均效率: ${avgWorkTime} Min`;
+        document.getElementById('avg-hint').innerText = `區間平均效率: ${avgWorkTime} Min`;
         
         renderPareto(); 
         chartConfigs.forEach(conf => renderModule(conf.id));
@@ -295,19 +296,12 @@
     function renderTodayMonitor() {
         const l = document.getElementById('ui-lang').value;
         const d = i18n[l];
-        const selDate = new Date(document.getElementById('mon-date').value);
-        let start = new Date(selDate); start.setHours(7,0,0,0);
-        let end = new Date(start); end.setDate(end.getDate()+1);
+        const selDate = document.getElementById('mon-date').value;
         const base = parseInt(localStorage.getItem('set_base_time')) || avgWorkTime;
         const threshold = parseInt(localStorage.getItem('set_warn_threshold')) || 95;
         const alertColor = localStorage.getItem('set_warn_color') || '#ef4444';
         
-        const items = rawData.filter(r => {
-            const m = r.arrivalTime?.match(/(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})/);
-            if(!m) return false;
-            const dObj = new Date(m[3], m[2]-1, m[1], m[4], m[5]);
-            return dObj >= start && dObj < end;
-        });
+        const items = rawData.filter(r => getCleanDate(r.arrivalTime) === selDate);
 
         let totalRates = 0, count = 0;
         const listHtml = items.map(i => {
@@ -315,15 +309,13 @@
             let rawRate = i.totalTime > 0 ? Math.round((base / i.totalTime) * 100) : 100;
             let displayRate = Math.min(rawRate, 100);
             totalRates += displayRate; count++;
-            const per = Math.min((i.totalTime / base) * 100, 100);
+            const entryTime = i.arrivalTime.split(' ')[1] || "--:--";
+            const exitTime = isDone ? i.endTime.split(' ')[1] : "--:--";
             const isAlert = displayRate < threshold;
             return `<div class="progress-card">
                 <div style="display:flex; justify-content:space-between; align-items:center;"><span class="truck-tag">${i.truckNo}</span><span style="font-weight:900;">${i.matName}</span></div>
-                <div class="time-info-row">
-                    <div><span>${d.tIn}:</span> <span style="font-family:monospace;">${i.arrivalTime.split(' ')[1]}</span></div>
-                    <div><span>${d.tOut}:</span> <span style="font-family:monospace;">${isDone?i.endTime.split(' ')[1]:'--:--'}</span></div>
-                </div>
-                <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${per}%; background:${isAlert?alertColor:(isDone?'#4CAF50':'#2196F3')}"></div></div>
+                <div class="time-info-row"><div>${d.tIn}: <span style="font-family:monospace;">${entryTime}</span></div><div>${d.tOut}: <span style="font-family:monospace;">${exitTime}</span></div></div>
+                <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${Math.min((i.totalTime/base)*100,100)}%; background:${isAlert?alertColor:(isDone?'#4CAF50':'#2196F3')}"></div></div>
                 <div class="kpi-formula" style="color:${isAlert?alertColor:'#fff'}">${i.totalTime}m / ${base}m = ${isDone?'✅':'⏳'} ${displayRate}%</div>
             </div>`;
         }).join('');
@@ -339,7 +331,7 @@
     function changeLanguage() {
         const l = document.getElementById('ui-lang').value;
         const d = i18n[l];
-        document.getElementById('main-title').innerText = d.title || "原管貨櫃管理報表 v6.1";
+        document.getElementById('main-title').innerText = d.title || "原管貨櫃管理報表 v6.2";
         document.getElementById('mon-title').innerText = d.mon;
         document.getElementById('tit-pareto').innerText = d.pareto;
         document.getElementById('source-0').innerHTML = `<option value="tons">${d.optT}</option><option value="counts">${d.optC}</option>`;
@@ -352,26 +344,29 @@
         const l = document.getElementById('ui-lang').value;
         const d = i18n[l];
         const names = [d.cT, d.wT, d.hT, d.aT];
-        let html = '';
+        let html = '', setHtml = '';
         chartConfigs.forEach((conf, idx) => {
             const savedType = localStorage.getItem(`def_type_${conf.id}`) || conf.def;
-            let extraSelect = "";
-            if (conf.id === 3) {
-                extraSelect = `<select id="eff-mode" onchange="renderModule(3)" style="margin-right:10px;"><option value="sum">${d.optSumH}</option><option value="avg">${d.optAvgH}</option></select>`;
-            }
+            let extraSelect = conf.id === 3 ? `<select id="eff-mode" onchange="renderModule(3)" style="margin-right:10px;"><option value="sum">${d.optSumH}</option><option value="avg">${d.optAvgH}</option></select>` : "";
+            
             html += `<div class="chart-card" id="card-${conf.id}"><div class="chart-header"><div style="font-weight:bold;">${names[idx]}</div><div style="display:flex;">${extraSelect}<select id="type-${conf.id}" onchange="renderModule(${conf.id})"><option value="bar" ${savedType==='bar'?'selected':''}>${d.typeNames.bar}</option><option value="line" ${savedType==='line'?'selected':''}>${d.typeNames.line}</option><option value="area" ${savedType==='area'?'selected':''}>${d.typeNames.area}</option><option value="stepped" ${savedType==='stepped'?'selected':''}>${d.typeNames.stepped}</option><option value="radar" ${savedType==='radar'?'selected':''}>${d.typeNames.radar}</option></select></div></div><div class="chart-container"><canvas id="canvas-${conf.id}"></canvas></div><div id="box-${conf.id}" class="stat-grid-mini"></div></div>`;
+            
+            // 修正：設定面板內的預設圖表選項
+            setHtml += `<div class="set-item"><label>${names[idx]} 預設</label><select id="set-type-${conf.id}" style="width:100%;"><option value="bar" ${savedType==='bar'?'selected':''}>${d.typeNames.bar}</option><option value="line" ${savedType==='line'?'selected':''}>${d.typeNames.line}</option><option value="area" ${savedType==='area'?'selected':''}>${d.typeNames.area}</option><option value="stepped" ${savedType==='stepped'?'selected':''}>${d.typeNames.stepped}</option><option value="radar" ${savedType==='radar'?'selected':''}>${d.typeNames.radar}</option></select></div>`;
         });
         document.getElementById('dynamic-charts').innerHTML = html;
+        document.getElementById('settings-chart-types').innerHTML = setHtml;
     }
 
     function startAutoRefresh() {
         if (refreshTimer) clearInterval(refreshTimer);
         const rate = parseInt(localStorage.getItem('set_refresh_rate') || '600');
-        if (rate <= 0) return; countdown = rate;
+        if (rate <= 0) return;
+        countdown = rate;
         refreshTimer = setInterval(async () => {
-            countdown--; 
-            const timerEl = document.getElementById('refresh-timer');
-            if (timerEl) timerEl.innerText = `🔄 ${countdown}s`;
+            countdown--;
+            const el = document.getElementById('refresh-timer');
+            if(el) el.innerText = `🔄 ${countdown}s`;
             if (countdown <= 0) { await fetchPublishedData(); countdown = rate; }
         }, 1000);
     }
@@ -382,7 +377,7 @@
         localStorage.setItem('set_warn_threshold', document.getElementById('set-warn-threshold').value);
         localStorage.setItem('set_warn_color', document.getElementById('set-warn-color').value);
         chartConfigs.forEach(conf => {
-            const el = document.getElementById(`type-${conf.id}`);
+            const el = document.getElementById(`set-type-${conf.id}`);
             if(el) localStorage.setItem(`def_type_${conf.id}`, el.value);
         });
         location.reload();
