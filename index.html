@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>原管貨櫃管理報表 v4.9</title>
+    <title>原管貨櫃管理報表 v5.0</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
@@ -21,7 +21,6 @@
         .progress-card { background: rgba(255,255,255,0.1); padding: 18px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); }
         .truck-tag { background: #3b82f6; color: white; padding: 3px 10px; border-radius: 6px; font-size: 0.95rem; font-weight: 900; }
         .time-info-row { display: flex; justify-content: space-between; margin-top: 10px; font-size: 0.85rem; background: rgba(255,255,255,0.05); padding: 5px 10px; border-radius: 8px; }
-        .time-value { color: #fff; font-family: 'Consolas', monospace; }
         .progress-bar-bg { background: rgba(255,255,255,0.2); height: 14px; border-radius: 7px; overflow: hidden; margin: 12px 0 8px 0; }
         .progress-bar-fill { height: 100%; transition: width 0.5s; }
         .kpi-formula { font-size: 1.1rem; font-weight: 900; font-family: 'Consolas', monospace; background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 8px; display: block; margin-top: 10px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
@@ -53,12 +52,13 @@
         <div class="set-item"><label id="lbl-set-base">⏱️ Benchmark Time (Min)</label><input type="number" id="set-base-time" style="width:100%;"><small id="avg-hint" style="color:var(--primary); font-weight:bold;"></small></div>
         <div class="set-item"><label id="lbl-set-threshold">🚨 Warning Threshold (%)</label><input type="number" id="set-warn-threshold" style="width:100%;"></div>
         <div class="set-item"><label id="lbl-set-color">🎨 Warning Color</label><input type="color" id="set-warn-color" style="width:100%; height:40px;"></div>
-        <div id="settings-list"></div> <button class="btn-run" style="width:100%; margin-top:10px;" onclick="saveSettings()" id="set-save-btn">Save</button>
+        <div id="settings-list"></div>
+        <button class="btn-run" style="width:100%; margin-top:10px;" onclick="saveSettings()" id="set-save-btn">Save</button>
     </div>
 
     <div class="container">
         <header class="header-main">
-            <h1 class="header-title" id="main-title">原管貨櫃管理報表 v4.9</h1>
+            <h1 class="header-title" id="main-title">原管貨櫃管理報表 v5.0</h1>
             <div style="display:flex; gap:10px;">
                 <select id="ui-lang" onchange="changeLanguage()"><option value="zh">繁體中文</option><option value="en">English</option><option value="hi">हिन्दी</option></select>
                 <button onclick="toggleSettings()" id="btn-settings" style="padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:bold;">⚙️ 設定</button>
@@ -98,13 +98,12 @@
     const PUB_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQjY5PdR1CTA2gcvbeIPSFYflT2WHKWxELGliEG8c-fcCm9KlpTBlTbUIMDTCH1SieAITuY02SS65ic/pub?gid=0&single=true&output=csv";
     
     const i18n = {
-        zh: { mon: "🚚 今日動態 (07:00-07:00)", avgRate: "本日平均達成率", pareto: "📊 柏拉圖分析", rTotal: "區間加總", gTotal: "區間總量", cT: "📦 頻次趨勢", wT: "⚖️ 載重分析", hT: "⏱️ 效率分析", aT: "🔥 流量分佈", tIn: "進場", tOut: "出場", typeNames: {bar:"長條圖", line:"折線圖", area:"面積圖", stepped:"階梯圖", radar:"雷達圖"} },
-        en: { mon: "🚚 Live Status", avgRate: "Daily Avg Rate", pareto: "📊 Pareto", rTotal: "Range Sum", gTotal: "Range Total", cT: "📦 Frequency", wT: "⚖️ Tonnage", hT: "⏱️ Efficiency", aT: "🔥 24H Flow", tIn: "Entry", tOut: "Exit", typeNames: {bar:"Bar Chart", line:"Line Chart", area:"Area Chart", stepped:"Stepped", radar:"Radar Chart"} },
-        hi: { mon: "🚚 आज का प्रवाह", avgRate: "औसत दर", pareto: "📊 पारेतो", rTotal: "श्रेणी योग", gTotal: "कुल वजन", cT: "📦 आगमन", wT: "⚖️ वजन", hT: "⏱️ कुशलता", aT: "🔥 प्रवाह", tIn: "प्रवेश", tOut: "निकास", typeNames: {bar:"बार", line:"लाइन", area:"क्षेत्र", stepped:"स्टेप्ड", radar:"रडार"} }
+        zh: { mon: "🚚 今日動態 (07:00-07:00)", avgRate: "本日平均達成率", pareto: "📊 柏拉圖分析", rTotal: "區間加總", gTotal: "區間總量", cT: "📦 頻次趨勢", wT: "⚖️ 載重分析", hT: "⏱️ 效率分析", aT: "🔥 流量分佈", l1: "總次數", l2_1: "日均次數", l2_2: "日均重量", l2_3: "平均效率", l3: "總重量", l4: "總工時", tIn: "進場", tOut: "出場", typeNames: {bar:"長條圖", line:"折線圖", area:"面積圖", stepped:"階梯圖", radar:"雷達圖"} },
+        en: { mon: "🚚 Live Status", avgRate: "Daily Avg Rate", pareto: "📊 Pareto", rTotal: "Range Sum", gTotal: "Range Total", cT: "📦 Frequency", wT: "⚖️ Tonnage", hT: "⏱️ Efficiency", aT: "🔥 24H Flow", l1: "Total Units", l2_1: "Daily Avg", l2_2: "Avg Weight", l2_3: "Avg Eff", l3: "Total Wt", l4: "Total Hrs", tIn: "Entry", tOut: "Exit", typeNames: {bar:"Bar Chart", line:"Line Chart", area:"Area Chart", stepped:"Stepped", radar:"Radar Chart"} },
+        hi: { mon: "🚚 आज का प्रवाह", avgRate: "औसत दर", pareto: "📊 पारेतो", rTotal: "श्रेणी योग", gTotal: "कुल वजन", cT: "📦 आगमन", wT: "⚖️ वजन", hT: "⏱️ कुशलता", aT: "🔥 प्रवाह", l1: "कुल इकाइयां", l2_1: "दैनिक औसत", l2_2: "औसत वजन", l2_3: "कुशलता", l3: "कुल वजन", l4: "कुल घंटे", tIn: "प्रवेश", tOut: "निकास", typeNames: {bar:"बार", line:"लाइन", area:"क्षेत्र", stepped:"स्टेप्ड", radar:"रडार"} }
     };
 
-    let rawData = [], charts = {}, lastDayMap = {}, filteredMatStats = {}, avgWorkTime = 60, gFlow = Array(24).fill(0);
-    let totalRangeVolume = 0; // 新增：用於計算柏拉圖分母
+    let rawData = [], charts = {}, lastDayMap = {}, filteredMatStats = {}, avgWorkTime = 60, gFlow = Array(24).fill(0), totalRangeVolume = {tons:0, counts:0};
     let refreshTimer = null, countdown = 0;
     const chartConfigs = [{id:1, key:"counts", def:"bar"}, {id:2, key:"tons", def:"area"}, {id:3, key:"hours", def:"stepped"}, {id:4, key:"flow", def:"radar"}];
 
@@ -113,16 +112,39 @@
         document.getElementById('date-start').value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
         document.getElementById('date-end').value = now.toISOString().split('T')[0];
         document.getElementById('mon-date').value = now.toISOString().split('T')[0];
-        
         document.getElementById('set-refresh-rate').value = localStorage.getItem('set_refresh_rate') || '600';
         document.getElementById('set-base-time').value = localStorage.getItem('set_base_time') || '';
         document.getElementById('set-warn-threshold').value = localStorage.getItem('set_warn_threshold') || '95';
         document.getElementById('set-warn-color').value = localStorage.getItem('set_warn_color') || '#ef4444';
-        
         changeLanguage(); 
         await fetchPublishedData();
         startAutoRefresh();
     };
+
+    function changeLanguage() {
+        const l = document.getElementById('ui-lang').value;
+        const d = i18n[l];
+        document.getElementById('main-title').innerText = d.title || "原管貨櫃管理報表 v5.0";
+        document.getElementById('mon-title').innerText = d.mon;
+        document.getElementById('tit-pareto').innerText = d.pareto;
+        document.getElementById('btn-settings').innerText = "⚙️ " + (l === 'zh' ? '設定' : l === 'en' ? 'Settings' : 'सेटिंग्स');
+        initDynamicUI();
+        if(rawData.length > 0) { generateReport(); renderTodayMonitor(); }
+    }
+
+    function initDynamicUI() {
+        const l = document.getElementById('ui-lang').value;
+        const d = i18n[l];
+        const names = [d.cT, d.wT, d.hT, d.aT];
+        let html = '', setHtml = '';
+        chartConfigs.forEach((conf, idx) => {
+            const savedType = localStorage.getItem(`def_type_${conf.id}`) || conf.def;
+            html += `<div class="chart-card" id="card-${conf.id}"><div class="chart-header"><div style="font-weight:bold;">${names[idx]}</div><select id="type-${conf.id}" onchange="renderModule(${conf.id})"><option value="bar" ${savedType==='bar'?'selected':''}>${d.typeNames.bar}</option><option value="line" ${savedType==='line'?'selected':''}>${d.typeNames.line}</option><option value="area" ${savedType==='area'?'selected':''}>${d.typeNames.area}</option><option value="stepped" ${savedType==='stepped'?'selected':''}>${d.typeNames.stepped}</option><option value="radar" ${savedType==='radar'?'selected':''}>${d.typeNames.radar}</option></select></div><div class="chart-container"><canvas id="canvas-${conf.id}"></canvas></div><div id="box-${conf.id}" class="stat-grid-mini"></div></div>`;
+            setHtml += `<div class="set-item"><label>${names[idx]} 預設</label><select id="set-type-${conf.id}" style="width:100%;"><option value="bar" ${savedType==='bar'?'selected':''}>${d.typeNames.bar}</option><option value="line" ${savedType==='line'?'selected':''}>${d.typeNames.line}</option><option value="area" ${savedType==='area'?'selected':''}>${d.typeNames.area}</option><option value="stepped" ${savedType==='stepped'?'selected':''}>${d.typeNames.stepped}</option><option value="radar" ${savedType==='radar'?'selected':''}>${d.typeNames.radar}</option></select></div>`;
+        });
+        document.getElementById('dynamic-charts').innerHTML = html;
+        document.getElementById('settings-list').innerHTML = setHtml;
+    }
 
     async function fetchPublishedData() {
         document.getElementById('loading').style.display = 'flex';
@@ -165,13 +187,10 @@
                 const dObj = new Date(m[3], m[2]-1, m[1], m[4], m[5]);
                 const dKey = dObj.toISOString().split('T')[0];
                 if (dObj >= start && dObj <= end) {
-                    // 區間內所有物料的總量（不論是否有 mat-filter）
                     totalRangeVolume.tons += r.weight/1000;
                     totalRangeVolume.counts++;
-
                     if (!filteredMatStats[r.matName]) filteredMatStats[r.matName] = { counts:0, tons:0 };
                     filteredMatStats[r.matName].counts++; filteredMatStats[r.matName].tons += r.weight/1000;
-                    
                     if (lastDayMap[dKey] && (!filter || r.matName.toLowerCase().includes(filter))) {
                         lastDayMap[dKey].counts++; lastDayMap[dKey].tons += r.weight/1000; lastDayMap[dKey].hours += r.totalTime; gFlow[dObj.getHours()]++;
                     }
@@ -187,46 +206,18 @@
         const l = document.getElementById('ui-lang').value;
         const d = i18n[l];
         if (charts[0]) charts[0].destroy();
-        
         let items = Object.keys(filteredMatStats).map(k => ({ label: k, value: filteredMatStats[k][source] })).sort((a,b) => b.value - a.value).slice(0, 10);
         const rTop10Sum = Math.round(items.reduce((a,b)=>a+b.value, 0));
         const gRangeTotal = Math.round(totalRangeVolume[source]);
         const ratio = gRangeTotal > 0 ? ((rTop10Sum / gRangeTotal) * 100).toFixed(1) : 0;
-        
         const unit = source === 'tons' ? ' T' : '';
         document.getElementById('pareto-total').innerText = `${d.rTotal}: ${rTop10Sum}${unit} / ${d.gTotal}: ${gRangeTotal}${unit} = ${ratio}%`;
-        
         let acc = 0; const sum = items.reduce((x,y)=>x+y.value,0) || 1;
         charts[0] = new Chart(canvas.getContext('2d'), {
             type: 'bar',
             data: { labels: items.map(i=>i.label), datasets: [{ data: items.map(i=>i.value), backgroundColor: '#2196F3', borderRadius: 5, yAxisID: 'y' }, { data: items.map(i => { acc+=i.value; return (acc/sum)*100; }), type: 'line', borderColor: '#ef4444', yAxisID: 'y1' }] },
             options: { responsive: true, maintainAspectRatio: false, layout: { padding: { top: 45 } }, plugins: { legend: { display: false }, datalabels: { display: 'auto', anchor: 'end', align: 'top', clip: false, formatter: Math.round } }, scales: { y: { beginAtZero: true }, y1: { position: 'right', max: 100, grid: { drawOnChartArea: true, color: 'rgba(239,68,68,0.1)', borderDash:[5,5] } } } }
         });
-    }
-
-    function changeLanguage() {
-        const l = document.getElementById('ui-lang').value;
-        const d = i18n[l];
-        document.getElementById('main-title').innerText = d.title || "原管貨櫃管理報表 v4.9";
-        document.getElementById('mon-title').innerText = d.mon;
-        document.getElementById('tit-pareto').innerText = d.pareto;
-        document.getElementById('btn-settings').innerText = "⚙️ " + (l === 'zh' ? '設定' : 'Settings');
-        initDynamicUI();
-        if(rawData.length > 0) { generateReport(); renderTodayMonitor(); }
-    }
-
-    function initDynamicUI() {
-        const l = document.getElementById('ui-lang').value;
-        const d = i18n[l];
-        const names = [d.cT, d.wT, d.hT, d.aT];
-        let html = '', setHtml = '';
-        chartConfigs.forEach((conf, idx) => {
-            const savedType = localStorage.getItem(`def_type_${conf.id}`) || conf.def;
-            html += `<div class="chart-card" id="card-${conf.id}"><div class="chart-header"><div style="font-weight:bold;">${names[idx]}</div><select id="type-${conf.id}" onchange="renderModule(${conf.id})"><option value="bar" ${savedType==='bar'?'selected':''}>${d.typeNames.bar}</option><option value="line" ${savedType==='line'?'selected':''}>${d.typeNames.line}</option><option value="area" ${savedType==='area'?'selected':''}>${d.typeNames.area}</option><option value="stepped" ${savedType==='stepped'?'selected':''}>${d.typeNames.stepped}</option><option value="radar" ${savedType==='radar'?'selected':''}>${d.typeNames.radar}</option></select></div><div class="chart-container"><canvas id="canvas-${conf.id}"></canvas></div><div id="box-${conf.id}" class="stat-grid-mini"></div></div>`;
-            setHtml += `<div class="set-item"><label>${names[idx]} 預設類型</label><select id="set-type-${conf.id}" style="width:100%;"><option value="bar" ${savedType==='bar'?'selected':''}>${d.typeNames.bar}</option><option value="line" ${savedType==='line'?'selected':''}>${d.typeNames.line}</option><option value="area" ${savedType==='area'?'selected':''}>${d.typeNames.area}</option><option value="stepped" ${savedType==='stepped'?'selected':''}>${d.typeNames.stepped}</option><option value="radar" ${savedType==='radar'?'selected':''}>${d.typeNames.radar}</option></select></div>`;
-        });
-        document.getElementById('dynamic-charts').innerHTML = html;
-        document.getElementById('settings-list').innerHTML = setHtml;
     }
 
     function renderModule(idx) {
@@ -245,6 +236,24 @@
             options: { responsive: true, maintainAspectRatio: false, layout: { padding: { top: 45 } }, plugins: { legend: { display: false }, datalabels: { display: 'auto', anchor: 'end', align: 'top', clip: false, formatter: Math.round } }, scales: type==='radar'?{r:{suggestMin:0}}:{y:{beginAtZero: true}} }
         });
         updateAnalysis(idx);
+    }
+
+    // 修正：同步統計標籤語言
+    function updateAnalysis(idx) {
+        const l = document.getElementById('ui-lang').value;
+        const d = i18n[l];
+        const days = Object.keys(lastDayMap).length || 1;
+        const totalC = Object.keys(lastDayMap).reduce((a, k) => a + lastDayMap[k].counts, 0);
+        const totalT = Object.keys(lastDayMap).reduce((a, k) => a + lastDayMap[k].tons, 0);
+        const totalH = Object.keys(lastDayMap).reduce((a, k) => a + lastDayMap[k].hours, 0);
+        const box = document.getElementById(`box-${idx}`);
+        if(!box) return;
+        
+        let l2Label = d.l2_3, l2Val = totalC>0?Math.round(totalH/totalC)+'m':0;
+        if(idx===1) { l2Label = d.l2_1; l2Val = (totalC/days).toFixed(1); }
+        if(idx===2) { l2Label = d.l2_2; l2Val = (totalT/days).toFixed(1) + 'T'; }
+        
+        box.innerHTML = `<div><small>${d.l1}</small><div class="stat-num">${totalC}</div></div><div><small>${l2Label}</small><div class="stat-num">${l2Val}</div></div><div><small>${d.l3}</small><div class="stat-num">${Math.round(totalT)}T</div></div><div><small>${d.l4}</small><div class="stat-num">${Math.round(totalH)}m</div></div>`;
     }
 
     function renderTodayMonitor() {
@@ -275,20 +284,6 @@
         }).join('');
         document.getElementById('total-avg-rate').innerText = `${d.avgRate}: ${count>0?Math.round(totalRates/count):0}%`;
         document.getElementById('monitor-list').innerHTML = listHtml;
-    }
-
-    function updateAnalysis(idx) {
-        const d = i18n[document.getElementById('ui-lang').value];
-        const days = Object.keys(lastDayMap).length || 1;
-        const totalC = Object.keys(lastDayMap).reduce((a, k) => a + lastDayMap[k].counts, 0);
-        const totalT = Object.keys(lastDayMap).reduce((a, k) => a + lastDayMap[k].tons, 0);
-        const totalH = Object.keys(lastDayMap).reduce((a, k) => a + lastDayMap[k].hours, 0);
-        const box = document.getElementById(`box-${idx}`);
-        if(!box) return;
-        let l2Label = "平均效率", l2Val = totalC>0?Math.round(totalH/totalC)+'m':0;
-        if(idx===1) { l2Label = "日均次數"; l2Val = (totalC/days).toFixed(1); }
-        if(idx===2) { l2Label = "日均重量"; l2Val = (totalT/days).toFixed(1) + 'T'; }
-        box.innerHTML = `<div><small>總次數</small><div class="stat-num">${totalC}</div></div><div><small>${l2Label}</small><div class="stat-num">${l2Val}</div></div><div><small>總重量</small><div class="stat-num">${Math.round(totalT)}T</div></div><div><small>總工時</small><div class="stat-num">${Math.round(totalH)}m</div></div>`;
     }
 
     function startAutoRefresh() {
