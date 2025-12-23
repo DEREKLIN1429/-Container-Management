@@ -9,7 +9,17 @@
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <style>
         :root { --primary: #2196F3; --success: #4CAF50; --bg: #f0f2f5; --white: #ffffff; --text: #1e293b; --border: #e2e8f0; --accent: #0f172a; --danger: #ef4444; }
-        body { font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text); }
+        body { font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text); padding-top: 50px; } /* 留出上方計時器空間 */
+        
+        /* 倒數計時器置頂居中 */
+        #refresh-timer { 
+            position: fixed; top: 0; left: 50%; transform: translateX(-50%); 
+            background: var(--accent); color: white; padding: 5px 20px; 
+            border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; 
+            font-family: 'Consolas', monospace; font-size: 0.9rem; z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
         .container { max-width: 1400px; margin: 0 auto; width: 100%; }
         .header-main { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 25px; border-bottom: 3px solid var(--accent); padding-bottom: 10px; }
         .header-title { font-size: 2.2rem; font-weight: 900; color: var(--accent); margin: 0; }
@@ -24,10 +34,8 @@
         .progress-bar-bg { background: rgba(255,255,255,0.2); height: 14px; border-radius: 7px; overflow: hidden; margin: 12px 0 8px 0; }
         .progress-bar-fill { height: 100%; transition: width 0.5s; }
         .kpi-formula { font-size: 1.1rem; font-weight: 900; font-family: 'Consolas', monospace; background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 8px; display: block; margin-top: 10px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
-        
         .pareto-stats-bar { display: flex; gap: 15px; margin-top: 5px; flex-wrap: wrap; }
         .pareto-stat-item { font-size: 0.9rem; font-weight: 900; color: var(--primary); background: #f0f7ff; padding: 4px 12px; border-radius: 6px; border: 1px solid #d0e4ff; }
-
         .filter-row { background: white; padding: 20px; border-radius: 15px; margin-bottom: 25px; display: grid; grid-template-columns: repeat(3, 1fr) auto; gap: 15px; align-items: flex-end; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         .chart-card { background: var(--white); padding: 25px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); margin-bottom: 30px; border: 1px solid var(--border); }
         .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
@@ -43,6 +51,8 @@
     </style>
 </head>
 <body>
+
+    <div id="refresh-timer">🔄 Initializing...</div>
 
     <div id="loading" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); display:none; flex-direction:column; align-items:center; justify-content:center; z-index:9999;">
         <div style="border:5px solid #f3f3f3; border-top:5px solid #2196F3; border-radius:50%; width:45px; height:45px; animation:spin 1s linear infinite;"></div>
@@ -72,7 +82,7 @@
                 <div style="display:flex; align-items:center; gap:15px;"><h2 id="mon-title">🚚 今日動態 (07:00-07:00)</h2><input type="date" id="mon-date" onchange="renderTodayMonitor()"></div>
                 <div style="display:flex; align-items:center; gap:15px;">
                     <div id="total-avg-rate" class="total-avg-kpi">Avg Rate: --%</div>
-                    <div style="text-align:right;"><div id="monitor-count-label">...</div><div id="refresh-timer" style="font-size:0.8rem; opacity:0.7;"></div></div>
+                    <div style="text-align:right;"><div id="monitor-count-label">...</div></div>
                 </div>
             </div>
             <div class="monitor-grid" id="monitor-list"></div>
@@ -116,6 +126,24 @@
     let refreshTimer = null, countdown = 0;
     const chartConfigs = [{id:1, key:"counts", def:"bar"}, {id:2, key:"tons", def:"area"}, {id:3, key:"hours", def:"stepped"}, {id:4, key:"flow", def:"radar"}];
 
+    // 優化：智慧日期解析函式
+    function smartParseDate(str) {
+        if (!str) return null;
+        let d;
+        // 1. 嘗試解析 DD/MM/YYYY HH:mm (原始格式)
+        const m1 = str.match(/(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})/);
+        if (m1) d = new Date(m1[3], m1[2] - 1, m1[1], m1[4], m1[5]);
+        
+        // 2. 嘗試解析 YYYY/MM/DD HH:mm (常見格式)
+        const m2 = str.match(/(\d{4})\/(\d{2})\/(\d{2}) (\d{2}):(\d{2})/);
+        if (!d && m2) d = new Date(m2[1], m2[2] - 1, m2[3], m2[4], m2[5]);
+
+        // 3. 原生解析 (處理 ISO YYYY-MM-DD 等)
+        if (!d || isNaN(d.getTime())) d = new Date(str);
+
+        return (d && !isNaN(d.getTime())) ? d : null;
+    }
+
     window.onload = async () => {
         const now = new Date();
         document.getElementById('date-start').value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
@@ -146,7 +174,6 @@
         return csv.split(/\r?\n/).slice(1).map(l => {
             const c = l.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
             if (c.length < 11) return null;
-            // 修正索引：c[8]=I欄 TruckNo, c[1]=MaterialName, c[2]=C欄 Arrival, c[4]=E欄 TotalTime, c[10]=K欄 Weight
             return { truckNo: c[8] || "N/A", matName: c[1] || "", arrivalTime: c[2], endTime: c[3], totalTime: parseFloat(c[4]) || 0, weight: parseFloat(c[10]) || 0 };
         }).filter(x => x && x.matName);
     }
@@ -157,23 +184,18 @@
         const filter = document.getElementById('mat-filter').value.toLowerCase();
         
         lastDayMap = {}; filteredMatStats = {}; gFlow = Array(24).fill(0); 
-        // 修正：日期區間總計初始化
         totalRangeVolume = {tons:0, counts:0, hours:0};
 
         for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) lastDayMap[d.toISOString().split('T')[0]] = { tons: 0, hours: 0, counts: 0 };
         
         rawData.forEach(r => {
-            const m = r.arrivalTime?.match(/(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})/);
-            if (m) {
-                // 修正：計算式基準為 C 欄 【Arrival Time】
-                const dObj = new Date(m[3], m[2]-1, m[1], m[4], m[5]);
+            const dObj = smartParseDate(r.arrivalTime);
+            if (dObj) {
                 const dKey = dObj.toISOString().split('T')[0];
-                
                 if (dObj >= start && dObj <= end) {
-                    // 修正：所有加總統一計算式
-                    totalRangeVolume.tons += r.weight/1000; // K欄加總
-                    totalRangeVolume.counts++;              // 列位加總
-                    totalRangeVolume.hours += r.totalTime;  // E欄加總
+                    totalRangeVolume.tons += r.weight/1000;
+                    totalRangeVolume.counts++;
+                    totalRangeVolume.hours += r.totalTime;
 
                     if (!filteredMatStats[r.matName]) filteredMatStats[r.matName] = { counts:0, tons:0 };
                     filteredMatStats[r.matName].counts++; 
@@ -204,7 +226,6 @@
         
         let items = Object.keys(filteredMatStats).map(k => ({ label: k, value: filteredMatStats[k][source] })).sort((a,b) => b.value - a.value).slice(0, 10);
         const top10Sum = Math.round(items.reduce((a,b)=>a+b.value, 0));
-        // 修正：區間總量數據同步載重分析
         const gRangeTotal = Math.round(totalRangeVolume[source]);
         const ratio = gRangeTotal > 0 ? ((top10Sum / gRangeTotal) * 100).toFixed(1) : 0;
         const unit = source === 'tons' ? ' T' : '';
@@ -225,7 +246,6 @@
         const l = document.getElementById('ui-lang').value;
         const d = i18n[l];
         const days = Object.keys(lastDayMap).length || 1;
-        // 修正：各圖表下方計算式統一
         const totalC = totalRangeVolume.counts;
         const totalT = totalRangeVolume.tons;
         const totalH = totalRangeVolume.hours;
@@ -243,7 +263,6 @@
             const pmStr = pm.length ? `12:00~00:00: ${Math.min(...pm)}h-${Math.max(...pm)}h` : "PM: --";
             l2Val = `<div style="font-size:0.75rem; line-height:1.2;">${amStr}<br>${pmStr}</div>`;
         }
-        // 顯示統一加總結果
         box.innerHTML = `<div><small>${d.l1}</small><div class="stat-num">${totalC}</div></div><div><small>${l2Label}</small><div class="stat-num">${l2Val}</div></div><div><small>${d.l3}</small><div class="stat-num">${Math.round(totalT)}T</div></div><div><small>${d.l4}</small><div class="stat-num">${Math.round(totalH)}m</div></div>`;
     }
 
@@ -258,10 +277,8 @@
         const alertColor = localStorage.getItem('set_warn_color') || '#ef4444';
         
         const items = rawData.filter(r => {
-            const m = r.arrivalTime?.match(/(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})/);
-            if(!m) return false;
-            const dObj = new Date(m[3], m[2]-1, m[1], m[4], m[5]);
-            return dObj >= start && dObj < end;
+            const dObj = smartParseDate(r.arrivalTime);
+            return dObj && dObj >= start && dObj < end;
         });
 
         let totalRates = 0, count = 0;
@@ -294,7 +311,6 @@
     function changeLanguage() {
         const l = document.getElementById('ui-lang').value;
         const d = i18n[l];
-        document.getElementById('main-title').innerText = d.title || "原管貨櫃管理報表 v5.8";
         document.getElementById('mon-title').innerText = d.mon;
         document.getElementById('tit-pareto').innerText = d.pareto;
         document.getElementById('btn-settings').innerText = "⚙️ " + (l==='zh'?'設定':l==='en'?'Settings':'सेटिंग्स');
@@ -342,7 +358,7 @@
         const rate = parseInt(localStorage.getItem('set_refresh_rate') || '600');
         if (rate <= 0) return; countdown = rate;
         refreshTimer = setInterval(async () => {
-            countdown--; document.getElementById('refresh-timer').innerText = `🔄 ${countdown}s`;
+            countdown--; document.getElementById('refresh-timer').innerText = `🔄 Refresh in ${countdown}s`;
             if (countdown <= 0) { await fetchPublishedData(); countdown = rate; }
         }, 1000);
     }
