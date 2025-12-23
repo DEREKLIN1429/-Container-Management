@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>原管貨櫃管理報表 v2.6</title>
+    <title>原管貨櫃管理報表 v2.6 Rev</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
@@ -30,6 +30,7 @@
         .stat-grid-mini { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
         .stat-num { font-weight: 900; color: var(--primary); font-size: 1.3rem; }
         #toast-msg { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 12px 30px; border-radius: 50px; z-index: 9999; display: none; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
         @media (min-width: 768px) { .chart-container { height: 500px; } .btn-run { width: 160px; } .stat-grid-mini { grid-template-columns: repeat(4, 1fr); } }
     </style>
 </head>
@@ -108,17 +109,18 @@
     function get3DGradient(ctx, color) {
         const gradient = ctx.createLinearGradient(0, 0, 0, 400);
         gradient.addColorStop(0, color);
-        gradient.addColorStop(1, adjustColor(color, -50));
+        gradient.addColorStop(1, adjustColor(color, -40));
         return gradient;
     }
 
     function adjustColor(hex, amt) {
         hex = hex.replace('#','');
         let num = parseInt(hex, 16);
-        let r = Math.max(0, Math.min(255, (num >> 16) + amt));
-        let g = Math.max(0, Math.min(255, ((num >> 8) & 0x00FF) + amt));
-        let b = Math.max(0, Math.min(255, (num & 0x0000FF) + amt));
-        return "#" + (g | (b << 8) | (r << 16)).toString(16).padStart(6, '0');
+        let r = (num >> 16) + amt;
+        let g = (num >> 8 & 0x00FF) + amt;
+        let b = (num & 0x0000FF) + amt;
+        const clamp = (v) => Math.max(0, Math.min(255, v)).toString(16).padStart(2, '0');
+        return `#${clamp(r)}${clamp(g)}${clamp(b)}`;
     }
 
     window.onload = async () => {
@@ -178,9 +180,9 @@
     }
 
     function parseCSV(csv) {
-        const lines = csv.split('\n');
+        const lines = csv.split(/\r?\n/);
         return lines.slice(1).map(l => {
-            const c = l.split(',');
+            const c = l.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
             return c.length < 5 ? null : { machine: c[0], formNo: c[1], startTime: c[2], totalTime: c[4], concernSection: c[10] };
         }).filter(x => x);
     }
@@ -241,17 +243,25 @@
                 labels: finalItems.map(i => i.label),
                 datasets: [
                     { data: finalItems.map(i => i.value), backgroundColor: get3DGradient(ctx, globalColor), borderRadius: 8, yAxisID: 'y' },
-                    { data: paretoLine, type: 'line', borderColor: '#ef4444', borderWidth: 4, yAxisID: 'y1', clip: false }
+                    { data: paretoLine, type: 'line', borderColor: '#ef4444', borderWidth: 3, yAxisID: 'y1', pointRadius: 4 }
                 ]
             },
             options: { 
                 responsive: true, maintainAspectRatio: false,
-                layout: { padding: { top: 100, right: 60, left: 10, bottom: 10 } },
+                layout: { padding: { top: 40, right: 60, left: 10, bottom: 10 } },
                 plugins: { 
-                    datalabels: { display: (ctx) => ctx.datasetIndex === 0, anchor: 'end', align: 'top', font: { size: 18, weight: '900' }, clip: false, formatter: v => v.toFixed(source === 'tons' ? tonDec : 0) },
+                    datalabels: { 
+                        display: 'auto', // 重疊時自動隱藏
+                        anchor: 'end', align: 'top', offset: 5,
+                        font: { size: 11, weight: '600' }, 
+                        formatter: v => v.toFixed(source === 'tons' ? tonDec : 0) 
+                    },
                     legend: { display: false }
                 },
-                scales: { y: { beginAtZero: true }, y1: { position: 'right', max: 100, grid: { display: false } } }
+                scales: { 
+                    y: { beginAtZero: true, ticks: { font: { size: 10 } } }, 
+                    y1: { position: 'right', max: 100, grid: { display: false }, ticks: { font: { size: 10 } } } 
+                }
             }
         });
     }
@@ -271,24 +281,27 @@
 
         charts[idx] = new Chart(ctx, {
             type: type === 'radar' ? 'radar' : (type === 'area' ? 'line' : type),
-            data: { labels: finalLabels, datasets: [{ data: finalData, backgroundColor: type==='bar' ? get3DGradient(ctx, color) : color + '44', borderColor: color, borderWidth: 4, fill: type === 'area', stepped: type === 'stepped', tension: 0.4, borderRadius: 10 }] },
+            data: { labels: finalLabels, datasets: [{ data: finalData, backgroundColor: type==='bar' ? get3DGradient(ctx, color) : color + '33', borderColor: color, borderWidth: 3, fill: type === 'area', stepped: type === 'stepped', tension: 0.4, pointRadius: 3 }] },
             options: {
                 responsive: true, maintainAspectRatio: false,
-                layout: { padding: { top: 100, bottom: 20, right: 40 } },
+                layout: { padding: { top: 40, bottom: 10, right: 20 } },
                 plugins: { 
                     datalabels: { 
-                        display: true, anchor: 'end', align: 'top', clip: false, font: { size: 18, weight: '900' },
+                        display: 'auto', // 關鍵：自動檢測遮蓋
+                        anchor: 'end', align: 'top', offset: 4,
+                        font: { size: 10, weight: '600' },
                         formatter: v => {
                             if (v <= 0) return '';
-                            if (idx === 1 || idx === 3) return Math.round(v);
-                            // 重量圖 (idx 2) 顯示整數以防遮蓋，分析框仍維持小數
-                            if (idx === 2) return Math.round(v);
-                            return v.toFixed(tonDec);
+                            if (idx === 1 || idx === 3 || idx === 4) return Math.round(v);
+                            return v.toFixed(1); // 統一一位小數，節省空間
                         }
                     },
                     legend: { display: false }
                 },
-                scales: type === 'radar' ? { r: { ticks: { display: false }, pointLabels: { font: { size: 24, weight: '900' } } } } : { y: { beginAtZero: true } }
+                scales: type === 'radar' ? { r: { ticks: { display: false }, pointLabels: { font: { size: 14, weight: 'bold' } } } } : { 
+                    y: { beginAtZero: true, ticks: { font: { size: 10 } } },
+                    x: { ticks: { font: { size: 10 }, maxRotation: 45 } }
+                }
             }
         });
         updateAnalysis(idx, labels, dayMap);
